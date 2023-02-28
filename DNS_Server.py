@@ -46,7 +46,7 @@ class DNS:
         :return: -1 - cannot create server's socket
         """
 
-        dns_cache = {}
+        dns_cache = {}  # dictionary that holding pairs: (domain, ip)
 
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server_sock:  # creating UDP socket
 
@@ -79,7 +79,10 @@ class DNS:
                     continue
 
                 elif dom not in dns_cache:  # checking if current domain is in cache
-                    dns_cache[dom] = socket.gethostbyname(dom)
+                    try:
+                        dns_cache[dom] = socket.gethostbyname(dom)
+                    except Exception as e:
+                        print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
 
                 rep = dns_cache[dom]
 
