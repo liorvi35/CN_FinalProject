@@ -1,7 +1,7 @@
 """
-this file is implementation for DNS-SERVER using TCP connection
+this file is implementation for DNS-SERVER using UDP communication
 Authors: Lior Vinman, Yoad Tamar
-Date: 27.02.2023
+Date: 28.02.2023
 """
 
 # imports
@@ -13,65 +13,83 @@ from urllib.parse import urlparse  # for domain extracting
 # constants
 SERVER_ADDR = ("127.0.0.1", 30763)  # server address and port
 BUFFER_SIZE = 2048  # maximal size of received message
-NUM_CONN = 300  # maximal number of simultaneously connections
+ERR = -1  # global err code
 
 
-def validate_domain(url):
+class DNS:
     """
-    this function gets an url (website link) and checks its validation, i.e. checks if it has valid link form
-    :param url: an url to check validation
-    :return: if valid - url's domain name, else, -1
+    this class is a DNS server implementation
     """
-    if not urlparse(url).scheme:
-        url = "http://" + url
-    try:
-        valid_url = validators.url(url)
-    except TypeError:
-        return -1
-    try:
-        if valid_url:
-            domain_ip = socket.gethostbyname(urlparse(url).netloc)
-        else:
-            return -1
-    except socket.error:
-        return -1
-    return domain_ip
+
+    def get_domain(self, url):
+        """
+        this function gets an url and checks if it valid
+        :param url: the url to check validation
+        :return: url's domain if the url valid, -1 else
+        """
+
+        if not urlparse(url).scheme:  # checking if url is in legal format
+            url = "http://" + url
+        try:
+            validation = validators.url(url)  # validating url
+        except TypeError:
+            return ERR
+        if validation:
+            return urlparse(url).netloc  # returning the domain name
+        return ERR
 
 
-def main():
-    """
-    this is main function, here we're receiving connection from client, then receiving url that he sends,
-    checking if its valid url - if yes sending it domain's ip address, if not, sending error message
-    :return: -1 - cannot create server's socket
-    """
-    try:  # every socket operation (socket, bind, listen, accept, recv, sendall) may throw and error
+    def main(self):
+        """
+        this is main function, here we're receiving message from client,
+        then checking if its valid url - if yes sending it domain's ip address, if not, sending error message
+        :return: -1 - cannot create server's socket
+        """
 
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_sock:  # creating server's socket
-            server_sock.bind(SERVER_ADDR)  # binding server's socket
-            server_sock.listen(NUM_CONN)  # listening for connections to server's socket
-            print(f"listening on: {SERVER_ADDR}")
+        dns_cache = {}
+
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server_sock:  # creating UDP socket
+
+            try:
+                server_sock.bind(SERVER_ADDR)  # socket binding
+            except Exception as e:
+                print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
+
+            print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] server bound on: {SERVER_ADDR}")
 
             while True:
-                client_sock, client_addr = server_sock.accept()  # accepting a connection from client
-                print(f"[{datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}] got connection from: {client_addr}")
 
-                url = client_sock.recv(BUFFER_SIZE).decode()  # receiving url from client
-                print(f"[{datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}] received message from: {client_addr}")
-                url = validate_domain(url)  # checking url
+                try:
+                    client_msg, client_addr = server_sock.recvfrom(BUFFER_SIZE)  # receiving url
+                except Exception as e:
+                    print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
 
-                if url == -1:  # if bad url
-                    client_sock.sendall("Non-Existent Domain".encode())  # sending error message
-                    print(f"[{datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}] sent message to: {client_addr}")
-                else:
-                    client_sock.sendall(url.encode())  # sending domain's ip
-                    print(f"[{datetime.now().strftime('%d/%m/%Y - %H:%M:%S')}] sent message to: {client_addr}")
+                print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] received message from: {client_addr}")
 
-                client_sock.shutdown(socket.SHUT_RDWR)  # terminating socket
-                client_sock.close()  # closing socket
+                dom = DNS.get_domain(self, client_msg.decode())  # getting domain name
 
-    except socket.error:
-        return -1
+                if dom == ERR:  # checking if there is an error
+                    try:
+                        server_sock.sendto("Non-Existent Domain".encode(), client_addr)  # sending error message
+                    except Exception as e:
+                        print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
+
+                    print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] message has been sent to: {client_addr}")
+
+                    continue
+
+                elif dom not in dns_cache:  # checking if current domain is in cache
+                    dns_cache[dom] = socket.gethostbyname(dom)
+
+                rep = dns_cache[dom]
+
+                try:
+                    server_sock.sendto(rep.encode(), client_addr)  # sending the domain's ip
+                except Exception as e:
+                    print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
+
+                print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] message has been sent to: {client_addr}")
 
 
 if __name__ == "__main__":
-    main()
+    DNS.main(__name__)
