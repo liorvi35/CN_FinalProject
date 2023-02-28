@@ -4,7 +4,7 @@ MAX_BYTES = 1024
 
 # the port is needs to be 67-68 , but it dont work with
 serverPort = 67
-clientPort = 69
+clientPort = 12345
 
 
 class DHCP_client(object):
