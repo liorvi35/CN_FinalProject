@@ -11,7 +11,7 @@ import validators  # for url-validation
 from urllib.parse import urlparse  # for domain extracting
 
 # constants
-SERVER_ADDR = ("127.0.0.1", 30763)  # server address and port
+SERVER_ADDR = ("127.0.0.1", 53)  # server address and port
 BUFFER_SIZE = 2048  # maximal size of received message
 ERR = -1  # global err code
 
