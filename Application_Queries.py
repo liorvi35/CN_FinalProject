@@ -29,6 +29,9 @@ class FirebaseQueries:
 
         :return:
         """
+        depart = open("depart.txt", "a")
+        depart.close()
+
         depart = open("depart.txt", "r")
         contain = False
         for x in depart:
@@ -155,3 +158,4 @@ if __name__ == "__main__":
     })
     firebase = FirebaseQueries
     FirebaseQueries.print_avg_student( firebase, 1)
+    
