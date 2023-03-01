@@ -38,14 +38,13 @@ class FirebaseQueries:
             if x == student_data[0]:
                 contain = True
         depart.close()
-        
+
         depart = open("depart.txt", "a")
         if not contain:
-            depart.write(student_data[0])
-        
+            depart.write(student_data[0] + '\n')
+
         depart.close()
-        
-            
+
         f = open(student_data[0] + ".txt", "a")
         f.write(student_data[1] + "\n")
         f.close()
@@ -77,9 +76,9 @@ class FirebaseQueries:
         delete = open(student_data[0] + "edit.txt", "a")
         f = open(student_data[0] + ".txt", "r")
         for line in f:
-            if line != student_data[0]:
+            if line != student_data[2]:
                 delete.write(line + "\n")
-        
+
         f.close()
         f = open(student_data[0] + ".txt", "w")
         f.write("")
@@ -87,12 +86,12 @@ class FirebaseQueries:
         f = open(student_data[0] + ".txt", "a")
         for line in delete:
             delete.write(line + "\n")
-        
+
         delete.close()
         f.close()
         if os.path.exists(student_data[0] + "edit.txt"):
             os.remove(student_data[0] + "edit.txt")
-    
+
         dep = db.reference(student_data[0])
         year = dep.child(student_data[1])
         year.child(student_data[2]).delete()
@@ -112,7 +111,7 @@ class FirebaseQueries:
         all_stud = db.reference().get()
         print(all_stud)
 
-    def print_single_student(self , student_data):
+    def print_single_student(self, student_data):
         """
 
         :return:
@@ -126,8 +125,6 @@ class FirebaseQueries:
 
         :return:
         """
-
-
 
     def print_avg_of_avgs(self):
         """
@@ -157,5 +154,4 @@ if __name__ == "__main__":
         'databaseURL': 'https://cn-finalproject-default-rtdb.firebaseio.com'
     })
     firebase = FirebaseQueries
-    FirebaseQueries.print_avg_student( firebase, 1)
-    
+    FirebaseQueries.print_avg_student(firebase, 1)
