@@ -29,13 +29,15 @@ class FirebaseQueries:
 
         :return:
         """
-        depart =  open("depart.txt", "ra")
+        depart = open("depart.txt", "r")
         contain = False
         for x in depart:
             if x == student_data[0]:
                 contain = True
-         
-        if contain == False:
+        depart.close()
+        
+        depart = open("depart.txt", "a")
+        if not contain:
             depart.write(student_data[0])
         
         depart.close()
