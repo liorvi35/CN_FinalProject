@@ -1,7 +1,7 @@
 """
 this file is implementation for DNS-SERVER using UDP communication
 Authors: Lior Vinman, Yoad Tamar
-Date: 28.02.2023
+Date: 06.03.2023
 """
 
 # imports
@@ -12,7 +12,7 @@ from urllib.parse import urlparse  # for domain extracting
 
 # constants
 SERVER_ADDR = ("127.0.0.1", 53)  # server address and port
-BUFFER_SIZE = 2048  # maximal size of received message
+BUFFER_SIZE = 1024  # maximal size of received message
 ERR = -1  # global err code
 
 
