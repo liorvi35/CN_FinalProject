@@ -1,12 +1,66 @@
 '''
 
 '''
+import json
 
 import firebase_admin
 import os
 
 from firebase_admin import credentials
 from firebase_admin import db
+
+
+def find_ids(obj):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == 'id':
+                yield v
+            else:
+                yield from find_ids(v)
+    elif isinstance(obj, list):
+        for i in obj:
+            yield from find_ids(i)
+
+
+def find_grades(obj):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == 'avg':
+                yield v
+            else:
+                yield from find_grades(v)
+    elif isinstance(obj, list):
+        for i in obj:
+            yield from find_grades(i)
+
+
+def add_to_avgs(obj, x):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == 'avg':
+                obj[k] = min(obj[k] + x, 100)  # limit to max 100
+            else:
+                add_to_avgs(v, x)
+    elif isinstance(obj, list):
+        for i in obj:
+            add_to_avgs(i, x)
+
+
+def print_false_condition_students(obj):
+    if isinstance(obj, dict):
+        if 'condition' in obj.get('academic', {}):
+            if obj['academic']['condition'] == 'False':
+                print("id: " + obj['info']['id'], "first name: " +  obj['info']['firstName'], "last name: " + obj['info']['lastName'])
+        for k, v in obj.items():
+            print_false_condition_students(v)
+    elif isinstance(obj, list):
+        for i in obj:
+            print_false_condition_students(i)
+
+
+
+
+
 
 
 class FirebaseQueries:
@@ -29,25 +83,6 @@ class FirebaseQueries:
 
         :return:
         """
-        depart = open("depart.txt", "a")
-        depart.close()
-
-        depart = open("depart.txt", "r")
-        contain = False
-        for x in depart:
-            if x == student_data[0]:
-                contain = True
-        depart.close()
-
-        depart = open("depart.txt", "a")
-        if not contain:
-            depart.write(student_data[0] + '\n')
-
-        depart.close()
-
-        f = open(student_data[0] + ".txt", "a")
-        f.write(student_data[1] + "\n")
-        f.close()
         dep = db.reference(student_data[0])
         year = dep.child('year1')
         year.update({
@@ -73,35 +108,18 @@ class FirebaseQueries:
 
         :return:
         """
-        delete = open(student_data[0] + "edit.txt", "a")
-        f = open(student_data[0] + ".txt", "r")
-        for line in f:
-            if line != student_data[2]:
-                delete.write(line + "\n")
-
-        f.close()
-        f = open(student_data[0] + ".txt", "w")
-        f.write("")
-        f.close()
-        f = open(student_data[0] + ".txt", "a")
-        for line in delete:
-            delete.write(line + "\n")
-
-        delete.close()
-        f.close()
-        if os.path.exists(student_data[0] + "edit.txt"):
-            os.remove(student_data[0] + "edit.txt")
-
         dep = db.reference(student_data[0])
         year = dep.child(student_data[1])
         year.child(student_data[2]).delete()
 
-    def update_exsiting_student(self):
+    def update_exsiting_student(self, student_data):
         """
-
+        [department , year , id , info/academic , update sub. , update to]
         :return:
         """
-        pass
+        dep = db.reference(student_data[0])
+        year = dep.child(student_data[1])
+        year.child(student_data[2]).child(student_data[3]).child(student_data[4]).update(student_data[5])
 
     def print_all_students(self):
         """
@@ -122,30 +140,57 @@ class FirebaseQueries:
 
     def print_avg_student(self, type):
         """
-
+        if the type equals to 1 - print the max avg , if equals to 0 - the min avg
         :return:
         """
+        data = db.reference().get()
+        parsed_data = json.loads(json.dumps(data))
+        grades = list(find_grades(parsed_data))
+        if len(grades) > 0:
+            grades.sort()
+            if type == 1:
+                grades.reverse()
+                print(f"the highest avg is: {grades[0]}")
+            else:
+                print(f"the lowest avg is: {grades[0]}")
+        else:
+            print("there is no students")
 
     def print_avg_of_avgs(self):
         """
 
         :return:
         """
-        pass
+        data = db.reference().get()
+        parsed_data = json.loads(json.dumps(data))
+        grades = list(find_grades(parsed_data))
+        if len(grades) > 0:
+            avg = sum(grades)
+            print(f"the avg is: {avg}")
+        else:
+            print("there is no students")
 
-    def factor_students_avg(self):
+    def factor_students_avg(self, x):
         """
 
         :return:
         """
-        pass
+        data = db.reference().get()
+        parsed_data = json.loads(json.dumps(data))
+        if data is not None:
+            add_to_avgs(parsed_data, 100)
+            db.reference().set(parsed_data)
 
     def print_conditon_students(self):
         """
 
         :return:
         """
-        pass
+        data = db.reference().get()
+        if data is not None:
+            print("the student that have false condition: ")
+            parsed_data = json.loads(json.dumps(data))
+            print_false_condition_students(parsed_data)
 
 
 if __name__ == "__main__":
@@ -154,4 +199,5 @@ if __name__ == "__main__":
         'databaseURL': 'https://cn-finalproject-default-rtdb.firebaseio.com'
     })
     firebase = FirebaseQueries
-    FirebaseQueries.print_avg_student(firebase, 1)
+    print(db.reference().get())
+    FirebaseQueries.print_conditon_students(firebase)
