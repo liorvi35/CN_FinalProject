@@ -119,7 +119,11 @@ class FirebaseQueries:
         """
         dep = db.reference(student_data[0])
         year = dep.child(student_data[1])
-        year.child(student_data[2]).child(student_data[3]).child(student_data[4]).update(student_data[5])
+        _id = year.child(student_data[2])
+        choose = _id.child(student_data[3])
+        print(choose.get())
+        choose.update({student_data[4]:student_data[5]})
+
 
     def print_all_students(self):
         """
@@ -166,6 +170,7 @@ class FirebaseQueries:
         grades = list(find_grades(parsed_data))
         if len(grades) > 0:
             avg = sum(grades)
+            avg = avg / len(grades)
             print(f"the avg is: {avg}")
         else:
             print("there is no students")
@@ -178,7 +183,7 @@ class FirebaseQueries:
         data = db.reference().get()
         parsed_data = json.loads(json.dumps(data))
         if data is not None:
-            add_to_avgs(parsed_data, 100)
+            add_to_avgs(parsed_data, x)
             db.reference().set(parsed_data)
 
     def print_conditon_students(self):
@@ -198,6 +203,6 @@ if __name__ == "__main__":
     default_app = firebase_admin.initialize_app(cred_obj, {
         'databaseURL': 'https://cn-finalproject-default-rtdb.firebaseio.com'
     })
-    firebase = FirebaseQueries
-    print(db.reference().get())
-    FirebaseQueries.print_conditon_students(firebase)
+    firebase = FirebaseQueries()
+    #         [department , year , id , info/academic , update sub. , update to]
+    FirebaseQueries.update_exsiting_student(firebase , ["CS" , "year1" , "123" , "academic", "avg" , "1331310"])
