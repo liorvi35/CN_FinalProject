@@ -10,6 +10,11 @@ from firebase_admin import db
 
 
 def get_ids_by_avg(database, avg):
+    """
+    this function save all the id of the students that have the given avg
+    :param obj: json that represent the database
+    :return: return list that contains all the ids
+    """
     ids = []
     for dept, years in database.items():
         for year, students in years.items():
