@@ -32,7 +32,7 @@ def add_to_avgs(obj, x):
     """
     this function add factor to all avg of the students in the database
     :param obj: json that represent the database
-    :param x: the factor to add 
+    :param x: the factor to add
     :return: a json that represent the database after the add
     """
     if isinstance(obj, dict):
@@ -55,7 +55,7 @@ def print_false_condition_students(obj):
     if isinstance(obj, dict):
         if 'condition' in obj.get('academic', {}):
             if obj['academic']['condition'] == 'False':
-                print("id: " + obj['info']['id'], "first name: " +  obj['info']['firstName'], "last name: " + obj['info']['lastName'])
+                print("id: " + obj['info']['id'], "first name: " + obj['info']['firstName'], "last name: " + obj['info']['lastName'])
         for k, v in obj.items():
             print_false_condition_students(v)
     elif isinstance(obj, list):
@@ -70,8 +70,8 @@ class FirebaseQueries:
 
     def add_new_student(self, student_data):
         """
-        this function add new student to the database 
-        :param: student_data: a list that represent a student: 
+        this function add new student to the database
+        :param: student_data: a list that represent a student:
                 [department, id, first name, last name, email, phone number, degree, track, avg, condition]
         """
         dep = db.reference(student_data[0])
@@ -96,7 +96,7 @@ class FirebaseQueries:
 
     def delete_existing_student(self, student_data):
         """
-        this function delete student from the database 
+        this function delete student from the database
         :param: student_data: a list that represent a student: [department, year, id]
         """
         dep = db.reference(student_data[0])
@@ -110,7 +110,7 @@ class FirebaseQueries:
 
     def update_exsiting_student(self, student_data):
         """
-        this function update student from the database 
+        this function update student from the database
         :param: student_data: a list that represent a student: [department , year , id , info/academic , update sub. , update]
         """
         dep = db.reference(student_data[0])
@@ -146,7 +146,7 @@ class FirebaseQueries:
 
     def print_avg_student(self, type):
         """
-        this function print the max/min avg 
+        this function print the max/min avg
         :param type: if the type equals to 1 - print the max avg , if equals to 0 - the min avg
         """
         data = db.reference().get()
@@ -164,7 +164,7 @@ class FirebaseQueries:
 
     def print_avg_of_avgs(self):
         """
-        this function print the avg of all the avg of the students 
+        this function print the avg of all the avg of the students
         """
         data = db.reference().get()
         parsed_data = json.loads(json.dumps(data))
@@ -179,7 +179,7 @@ class FirebaseQueries:
     def factor_students_avg(self, x):
         """
         this function add all the students a factor to avg
-        :param x: the factor to add 
+        :param x: the factor to add
         """
         data = db.reference().get()
         parsed_data = json.loads(json.dumps(data))
@@ -193,7 +193,7 @@ class FirebaseQueries:
 
     def print_conditon_students(self):
         """
-        this function print all the student that have a false condition 
+        this function print all the student that have a false condition
         :return:
         """
         data = db.reference().get()
@@ -203,4 +203,27 @@ class FirebaseQueries:
             print_false_condition_students(parsed_data)
         else:
             print("there is no students")
+
+    def next_year(self):
+        """
+        this function change every student to his next year 
+        if he is on third year - he finishes the degree and delete from the database 
+        :return: 
+        """
+        data = db.reference().get()
+        json_obj = json.loads(json.dumps(data))
+        if data is not None:
+            for department, years in json_obj.items():
+                # iterate through each year
+                for year in sorted(years.keys()):
+                    if year == 'year3':  # delete year3
+                        del json_obj[department][year]
+                    else:  # move students to the next year
+                        next_year = 'year' + str(int(year[4:]) + 1)
+                        json_obj[department][next_year] = json_obj[department].pop(year)
+            db.reference().set(json_obj)
+            print("update!")
+        else:
+            print("there is no students")
+
 
