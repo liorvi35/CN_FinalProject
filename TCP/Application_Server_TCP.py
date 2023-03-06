@@ -5,7 +5,7 @@ Authors: Lior Vinman , Yoad Tamar
 
 Date: 01/03/2023
 """
-
+import json
 # imports
 import pickle
 import socket
@@ -71,38 +71,61 @@ class ServerTCP:
                 if num == "1":  # add new student
                     student_data = pickle.loads(client_sock.recv(BUFFER_SIZE))
                     Application_Queries.FirebaseQueries.add_new_student(obj, student_data)
-                    client_sock.send(f"Student with id = {student_data[1]} was added to database!".encode())
+                    client_sock.sendall(f"Student with id = {student_data[1]} was added to database!".encode())
 
                 elif num == "2":  # delete existing student
                     student_data = pickle.loads(client_sock.recv(BUFFER_SIZE))
                     Application_Queries.FirebaseQueries.delete_existing_student(obj, student_data)
-                    client_sock.send(f"Student with id = {student_data[2]} was deleted from database!".encode())
+                    client_sock.sendall(f"Student with id = {student_data[2]} was deleted from database!".encode())
 
                 elif num == "3":  # update existing student
                     student_data = pickle.loads(client_sock.recv(BUFFER_SIZE))
-                    Application_Queries.FirebaseQueries.delete_existing_student(obj, student_data)
-                    client_sock.send(f"Student with id = {student_data[2]} was updated!".encode())
+                    Application_Queries.FirebaseQueries.update_exsiting_student(obj, student_data)
+                    client_sock.sendall(f"Student with id = {student_data[2]} was updated!".encode())
 
                 elif num == "4":  # print all students
-                    client_sock.send(Application_Queries.FirebaseQueries.print_all_students(obj).encode())
+                    all_students = Application_Queries.FirebaseQueries.print_all_students(obj)
+                    client_sock.sendall(json.dumps(all_students).encode())
 
                 elif num == "5":  # print student
                     student_data = pickle.loads(client_sock.recv(BUFFER_SIZE))
-                    Application_Queries.FirebaseQueries.delete_existing_student(obj, student_data)
-                    client_sock.send(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] "
-                                     f"Student with id = {student_data[2]} was deleted from database!".encode())
+                    student = Application_Queries.FirebaseQueries.print_single_student(obj, student_data)
+                    if student == -1:
+                        client_sock.sendall("Student dont exist!".encode())
+                    else:
+                        client_sock.sendall(f"{student}".encode())
 
-                elif num == "6":  # print avg of students
-                    pass
+                elif num == "6":  # print min/max avg of students
+                    avg = client_sock.recv(BUFFER_SIZE).decode("iso-8859-1")  # 1 - max , 0 - min
+                    data = Application_Queries.FirebaseQueries.print_avg_student(obj, avg)
+                    data = pickle.dumps(data)
+                    client_sock.sendall(data)
 
                 elif num == "7":  # avg of avg
-                    pass
+                    client_sock.sendall(f"{Application_Queries.FirebaseQueries.print_avg_of_avgs(obj)}".encode())
 
                 elif num == "8":  # factor
-                    pass
+                    factor = client_sock.recv(BUFFER_SIZE).decode("iso-8859-1")
+                    factor = int(factor)
+                    if Application_Queries.FirebaseQueries.factor_students_avg(obj, factor) == -1:
+                        client_sock.sendall(f"error occurred!".encode())
+                    else:
+                        client_sock.sendall(f"all students grades has been factored with: {factor} points!".encode())
 
                 elif num == "9":  # condition
-                    pass
+                    cond = Application_Queries.FirebaseQueries.print_conditon_students(obj)
+                    if cond == -1:
+                        client_sock.sendall(f"error occurred!".encode())
+                    else:
+                        data = pickle.dumps(cond)
+                        client_sock.sendall(data)
+
+                elif num == "10":
+                    ny = Application_Queries.FirebaseQueries.next_year(obj)
+                    if ny == -1:
+                        client_sock.sendall(f"error occurred!".encode())
+                    else:
+                        client_sock.sendall(f"students went up a year!".encode())
 
                 client_sock.close()
 
