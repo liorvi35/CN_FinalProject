@@ -214,7 +214,6 @@ class FirebaseQueries:
         json_obj = json.loads(json.dumps(data))
         if data is not None:
             for department, years in json_obj.items():
-                # iterate through each year
                 for year in sorted(years.keys()):
                     if year == 'year3':  # delete year3
                         del json_obj[department][year]
