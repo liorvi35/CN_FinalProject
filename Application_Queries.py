@@ -214,13 +214,3 @@ class FirebaseQueries:
             print_false_condition_students(parsed_data)
         else:
             print("there is no students")
-
-
-if __name__ == "__main__":
-    cred_obj = firebase_admin.credentials.Certificate('FireBase_SDK.json')
-    default_app = firebase_admin.initialize_app(cred_obj, {
-        'databaseURL': 'https://cn-finalproject-default-rtdb.firebaseio.com'
-    })
-    firebase = FirebaseQueries()
-    #         [department , year , id , info/academic , update sub. , update to]
-    FirebaseQueries.update_exsiting_student(firebase , ["CS" , "year1" , "123" , "academic", "avg" , "1331310"])
