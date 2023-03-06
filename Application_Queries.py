@@ -110,7 +110,12 @@ class FirebaseQueries:
         """
         dep = db.reference(student_data[0])
         year = dep.child(student_data[1])
-        year.child(student_data[2]).delete()
+        student = year.child(student_data[2])
+        if student.get() is None:
+            print(f'Student with ID {student_data[2]} does not exist.')
+        else:
+            year.child(student_data[2]).delete()
+            print(f'Student with ID {student_data[2]} deleted.')
 
     def update_exsiting_student(self, student_data):
         """
@@ -120,9 +125,12 @@ class FirebaseQueries:
         dep = db.reference(student_data[0])
         year = dep.child(student_data[1])
         _id = year.child(student_data[2])
-        choose = _id.child(student_data[3])
-        print(choose.get())
-        choose.update({student_data[4]:student_data[5]})
+        if _id.get() is None:
+            print(f'Student with ID {student_data[2]} does not exist.')
+        else:
+            choose = _id.child(student_data[3])
+            choose.update({student_data[4]:student_data[5]})
+            print(f'Student with ID {student_data[2]} updated.')
 
 
     def print_all_students(self):
@@ -140,7 +148,11 @@ class FirebaseQueries:
         """
         dep = db.reference(student_data[0])
         year = dep.child(student_data[1])
-        print(year.child(student_data[2]).get())
+        student = year.child(student_data[2])
+        if student.get() is None:
+            print(f'Student with ID {student_data[2]} does not exist.')
+        else:
+            print(student.get())
 
     def print_avg_student(self, type):
         """
@@ -185,6 +197,10 @@ class FirebaseQueries:
         if data is not None:
             add_to_avgs(parsed_data, x)
             db.reference().set(parsed_data)
+            print(f"all the student get factor of {x} to their avg")
+        else:
+            print("there is no students")
+
 
     def print_conditon_students(self):
         """
@@ -196,6 +212,8 @@ class FirebaseQueries:
             print("the student that have false condition: ")
             parsed_data = json.loads(json.dumps(data))
             print_false_condition_students(parsed_data)
+        else:
+            print("there is no students")
 
 
 if __name__ == "__main__":
