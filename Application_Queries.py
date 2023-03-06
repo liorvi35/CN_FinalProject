@@ -1,14 +1,22 @@
 """
 this file contains the queries to the database
-
 Authors: Lior Vinman , Yoad Tamar
-
 Date: 06/03/2023
 """
 
 import json
 import firebase_admin
 from firebase_admin import db
+
+
+def get_ids_by_avg(database, avg):
+    ids = []
+    for dept, years in database.items():
+        for year, students in years.items():
+            for student_id, info in students.items():
+                if info['academic']['avg'] == avg:
+                    ids.append(info['info']['id'])
+    return ids
 
 
 def find_grades(obj):
@@ -46,21 +54,59 @@ def add_to_avgs(obj, x):
             add_to_avgs(i, x)
 
 
-def print_false_condition_students(obj):
+def get_false_condition_students_ids(obj):
     """
-    this function save all the student that have a false condition in the database
-    the function print all the names an ids of those student
+    This function returns a list of ids of all students that have a false condition in the database
     :param obj: json that represent the database
+    :return: list of student ids
     """
+    student_ids = []
     if isinstance(obj, dict):
         if 'condition' in obj.get('academic', {}):
-            if obj['academic']['condition'] == 'False':
-                print("id: " + obj['info']['id'], "first name: " + obj['info']['firstName'], "last name: " + obj['info']['lastName'])
+            if obj['academic']['condition'] == 'True':
+                student_ids.append(obj['info']['id'])
         for k, v in obj.items():
-            print_false_condition_students(v)
+            student_ids += get_false_condition_students_ids(v)
     elif isinstance(obj, list):
         for i in obj:
-            print_false_condition_students(i)
+            student_ids += get_false_condition_students_ids(i)
+    return student_ids
+
+def get_students_by_ids(json_obj, id_list):
+    """
+    This function returns the JSON representation of all the students with the ids in the given list
+    :param json_obj: JSON object representing the database
+    :param id_list: list of student ids to search for
+    :return: list of JSON objects representing the matching students
+    """
+    matching_students = []
+    for id in id_list:
+        student = get_student_by_id(json_obj, id)
+        if student:
+            matching_students.append(student)
+    return matching_students
+
+def get_student_by_id(json_obj, id):
+    """
+    This function returns the JSON representation of the student with the given id, if it exists in the given JSON object
+    :param json_obj: JSON object representing the database
+    :param id: student id to search for
+    :return: JSON object representing the matching student, or None if no match is found
+    """
+    if isinstance(json_obj, dict):
+        if 'id' in json_obj.get('info', {}):
+            if json_obj['info']['id'] == id:
+                return json_obj
+        for k, v in json_obj.items():
+            student = get_student_by_id(v, id)
+            if student:
+                return student
+    elif isinstance(json_obj, list):
+        for i in json_obj:
+            student = get_student_by_id(i, id)
+            if student:
+                return student
+    return None
 
 
 class FirebaseQueries:
@@ -123,14 +169,12 @@ class FirebaseQueries:
             choose.update({student_data[4]:student_data[5]})
             print(f'Student with ID {student_data[2]} updated.')
 
-
     def print_all_students(self):
         """
-
         :return:
         """
         all_stud = db.reference().get()
-        print(all_stud)
+        return all_stud # change
 
     def print_single_student(self, student_data):
         """
@@ -140,9 +184,9 @@ class FirebaseQueries:
         year = dep.child(student_data[1])
         student = year.child(student_data[2])
         if student.get() is None:
-            print(f'Student with ID {student_data[2]} does not exist.')
+            return -1
         else:
-            print(student.get())
+            return student.get()
 
     def print_avg_student(self, type):
         """
@@ -154,13 +198,15 @@ class FirebaseQueries:
         grades = list(find_grades(parsed_data))
         if len(grades) > 0:
             grades.sort()
-            if type == 1:
+            if int(type) == 1:
                 grades.reverse()
-                print(f"the highest avg is: {grades[0]}")
+                return get_students_by_ids(parsed_data, get_ids_by_avg(parsed_data, grades[0]))
             else:
                 print(f"the lowest avg is: {grades[0]}")
+                return get_students_by_ids(parsed_data, get_ids_by_avg(parsed_data, grades[0]))
         else:
             print("there is no students")
+            return -1
 
     def print_avg_of_avgs(self):
         """
@@ -172,9 +218,9 @@ class FirebaseQueries:
         if len(grades) > 0:
             avg = sum(grades)
             avg = avg / len(grades)
-            print(f"the avg is: {avg}")
+            return avg
         else:
-            print("there is no students")
+            return -1
 
     def factor_students_avg(self, x):
         """
@@ -186,9 +232,9 @@ class FirebaseQueries:
         if data is not None:
             add_to_avgs(parsed_data, x)
             db.reference().set(parsed_data)
-            print(f"all the student get factor of {x} to their avg")
+            return 0
         else:
-            print("there is no students")
+            return -1
 
 
     def print_conditon_students(self):
@@ -198,11 +244,10 @@ class FirebaseQueries:
         """
         data = db.reference().get()
         if data is not None:
-            print("the student that have false condition: ")
             parsed_data = json.loads(json.dumps(data))
-            print_false_condition_students(parsed_data)
+            return get_students_by_ids(parsed_data, get_false_condition_students_ids(parsed_data))
         else:
-            print("there is no students")
+            return -1
 
     def next_year(self):
         """
@@ -221,8 +266,6 @@ class FirebaseQueries:
                         next_year = 'year' + str(int(year[4:]) + 1)
                         json_obj[department][next_year] = json_obj[department].pop(year)
             db.reference().set(json_obj)
-            print("update!")
+            return 0
         else:
-            print("there is no students")
-
-
+            return -1
