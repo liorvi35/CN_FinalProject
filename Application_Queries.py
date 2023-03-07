@@ -149,10 +149,10 @@ class FirebaseQueries:
         year = dep.child(student_data[1])
         student = year.child(student_data[2])
         if student.get() is None:
-            print(f'Student with ID {student_data[2]} does not exist.')
+            return 1
         else:
             year.child(student_data[2]).delete()
-            print(f'Student with ID {student_data[2]} deleted.')
+            return 0
 
     def update_exsiting_student(self, student_data):
         """
