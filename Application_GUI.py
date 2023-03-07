@@ -10,7 +10,9 @@ import socket
 import time
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 import json
+import re
 
 # constants
 MAIN_HEIGHT = 370
@@ -22,6 +24,11 @@ BUFFER_SIZE = 1024
 APP_HEIGHT = 220
 APP_WIDTH = 750
 APP_ADDR = ("127.0.0.1", 9090)
+
+
+def is_valid_email(email):
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email)
 
 
 class GUI:
@@ -49,12 +56,14 @@ class GUI:
         self.dns_button.pack(padx=20, pady=20)
 
         # APP_RUDP button
-        self.app_rudp_button = tk.Button(master, text="Application (R-UDP)", command=lambda: self.app_function(1), width=20)
+        self.app_rudp_button = tk.Button(master, text="Application (R-UDP)", command=lambda: self.app_function(1),
+                                         width=20)
         self.app_rudp_button.config(font=('MS Outlook', 12, 'bold'))
         self.app_rudp_button.pack(padx=20, pady=20)
 
         # APP_TCP button
-        self.app_tcp_button = tk.Button(master, text="Application (TCP)", command=lambda: self.app_function(2), width=20)
+        self.app_tcp_button = tk.Button(master, text="Application (TCP)", command=lambda: self.app_function(2),
+                                        width=20)
         self.app_tcp_button.config(font=('MS Outlook', 12, 'bold'))
         self.app_tcp_button.pack(padx=20, pady=20)
 
@@ -62,7 +71,6 @@ class GUI:
         self.cred = tk.Label(master, text="Lior Vinman & Yoad Tamar 2023 \u00A9")
         self.cred.config(font=("MS Outlook", 10))
         self.cred.pack()
-
 
     def dhcp_function(self):
         """
@@ -173,7 +181,8 @@ class GUI:
 
         # Get Condition Students button
         get_condition_students_button = tk.Button(app_tcp_window, text="Print Condition Students",
-                                                  command=lambda: self.get_condition_students_function(protocol), width=20)
+                                                  command=lambda: self.get_condition_students_function(protocol),
+                                                  width=20)
         get_condition_students_button.config(font=('MS Outlook', 12, 'bold'))
         get_condition_students_button.grid(row=2, column=2, padx=20, pady=10)
 
@@ -206,12 +215,40 @@ class GUI:
                 input_box.grid(row=i, column=1, padx=10, pady=5, sticky="E")
                 inputs.append(input_box)
 
-            submit_button = tk.Button(frame, text="Submit", command=lambda: self.valid([input_box.get() for input_box in inputs]))
+            submit_button = tk.Button(frame, text="Submit",
+                                      command=lambda: self.valid([input_box.get() for input_box in inputs]))
             submit_button.grid(row=11, column=1, pady=10)
 
     def valid(self, data):
-        print(data)
-
+        # [department, id, first name, last name, email, phone number, degree, track, avg, condition]
+        #         messagebox.showerror("Error", "Password must be at least 8 characters long")
+        lengths = [len(string) > 0 for string in data]
+        # if not all(lengths):
+        #    messagebox.showerror("Error", "you must fill all the boxes")
+        if any(char.isdigit() for char in data[0]):
+            messagebox.showerror("Error", "department must be without numbers")
+        elif not data[1].isdigit():
+            messagebox.showerror("Error", "id nust contains only numbers")
+        elif not is_valid_email(data[4]):
+            messagebox.showerror("Error", "please enter valid email \n  example@example.com  ")
+        elif not data[6].isdigit():
+            messagebox.showerror("Error", "phone number must be a number")
+        elif not data[8].isdigit():
+            messagebox.showerror("Error", "avg must be a number")
+        elif not (0 <= int(data[8]) <= 100):
+            messagebox.showerror("Error", "avg must be a number between 0 - 100")
+        elif not (data[9] == "False" or data[9] == "True"):
+            messagebox.showerror("Error", "condition nust be True or False")
+        else:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(APP_ADDR)
+            sock.sendall(f"{1}".encode())
+            time.sleep(0.0001)
+            sock.sendall( pickle.dumps(data))
+            time.sleep(0.0001)
+            sock.shutdown(socket.SHUT_RDWR)
+            sock.close()
+            messagebox.showinfo("Success", "The operation was successful.")
 
     def delete_student_function(self, protocol):
         """
@@ -447,9 +484,7 @@ class GUI:
         table.pack()
 
 
-
 if __name__ == "__main__":
     root = tk.Tk()
     my_gui = GUI(root)
     root.mainloop()
-
