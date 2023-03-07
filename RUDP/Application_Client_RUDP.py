@@ -9,15 +9,20 @@ class Client:
         self.window_size = 4
         self.seq_num = 0
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket.settimeout(1.0)
 
     def send(self, messages):
         for message in messages:
             packets = self.create_packets(message)
-            while True:
-                window = packets[self.seq_num:self.seq_num + self.window_size]
-                for i in range(len(window)):
-                    packet = window[i]
-                    self.socket.sendto(packet.encode(), (self.address, self.port))
+            num_packets = len(packets)
+            acks = [False] * num_packets
+            while not all(acks):
+                window_start = self.seq_num
+                window_end = min(self.seq_num + self.window_size, num_packets)
+                for i in range(window_start, window_end):
+                    if not acks[i]:
+                        packet = packets[i]
+                        self.socket.sendto(packet.encode(), (self.address, self.port))
                 try:
                     data, server_address = self.socket.recvfrom(self.buffer_size)
                 except socket.timeout:
@@ -25,9 +30,9 @@ class Client:
                 else:
                     seq_num, ack = data.decode().split('|')
                     if int(seq_num) >= self.seq_num and ack == 'ACK':
-                        self.seq_num = int(seq_num) + 1
-                        if self.seq_num >= len(packets):
-                            break
+                        acks[int(seq_num)] = True
+                        while self.seq_num < num_packets and acks[self.seq_num]:
+                            self.seq_num += 1
 
     def create_packets(self, message):
         packets = []
