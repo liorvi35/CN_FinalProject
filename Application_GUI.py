@@ -231,7 +231,7 @@ class GUI:
             messagebox.showerror("Error", "id nust contains only numbers")
         elif not is_valid_email(data[4]):
             messagebox.showerror("Error", "please enter valid email \n  example@example.com  ")
-        elif not data[6].isdigit():
+        elif not data[5].isdigit():
             messagebox.showerror("Error", "phone number must be a number")
         elif not data[8].isdigit():
             messagebox.showerror("Error", "avg must be a number")
