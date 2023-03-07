@@ -81,8 +81,8 @@ class ServerTCP:
 
                 elif num == "3":  # update existing student
                     student_data = pickle.loads(client_sock.recv(BUFFER_SIZE))
-                    Application_Queries.FirebaseQueries.update_exsiting_student(obj, student_data)
-                    client_sock.sendall(f"Student with id = {student_data[2]} was updated!".encode())
+                    res = Application_Queries.FirebaseQueries.update_exsiting_student(obj, student_data)
+                    client_sock.sendall(f"{res}".encode())
 
                 elif num == "4":  # print all students
                     all_students = Application_Queries.FirebaseQueries.print_all_students(obj)
