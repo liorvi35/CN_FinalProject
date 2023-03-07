@@ -98,6 +98,7 @@ class ServerTCP:
                 elif num == "6":  # print min/max avg of students
                     avg = client_sock.recv(BUFFER_SIZE).decode("iso-8859-1")  # 1 - max , 0 - min
                     data = Application_Queries.FirebaseQueries.print_avg_student(obj, avg)
+                    print("data="+data)
                     data = pickle.dumps(data)
                     client_sock.sendall(data)
 
