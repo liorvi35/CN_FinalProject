@@ -216,10 +216,10 @@ class GUI:
                 inputs.append(input_box)
 
             submit_button = tk.Button(frame, text="Submit",
-                                      command=lambda: self.valid([input_box.get() for input_box in inputs]))
+                                      command=lambda: self.valid([input_box.get() for input_box in inputs], frame))
             submit_button.grid(row=11, column=1, pady=10)
 
-    def valid(self, data):
+    def valid(self, data, frame):
         # [department, id, first name, last name, email, phone number, degree, track, avg, condition]
         #         messagebox.showerror("Error", "Password must be at least 8 characters long")
         lengths = [len(string) > 0 for string in data]
@@ -249,6 +249,7 @@ class GUI:
             sock.shutdown(socket.SHUT_RDWR)
             sock.close()
             messagebox.showinfo("Success", "The operation was successful.")
+            frame.destroy()
 
     def delete_student_function(self, protocol):
         """
@@ -273,17 +274,28 @@ class GUI:
                 inputs.append(input_box)
 
             submit_button = tk.Button(frame, text="Submit",
-                                      command=lambda: (sock := socket.socket(socket.AF_INET, socket.SOCK_STREAM),
-                                                       sock.connect(APP_ADDR),
-                                                       sock.sendall(f"{2}".encode()),
-                                                       time.sleep(0.0001),
-                                                       sock.sendall(
-                                                           pickle.dumps([input_box.get() for input_box in inputs])),
-                                                       time.sleep(0.0001),
-                                                       sock.shutdown(socket.SHUT_RDWR),
-                                                       sock.close(),
-                                                       frame.destroy()))
+                                      command=lambda: self.valid_del([input_box.get() for input_box in inputs], frame))
             submit_button.grid(row=11, column=1, pady=10)
+
+    def valid_del(self, data, frame):
+        """
+        TODO - input validation
+        """
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect(APP_ADDR)
+        sock.sendall(f"{2}".encode())
+        time.sleep(0.0001)
+        sock.sendall(pickle.dumps(data))
+        time.sleep(0.0001)
+        res = sock.recv(BUFFER_SIZE).decode("iso-8859-1")
+        sock.shutdown(socket.SHUT_RDWR)
+        sock.close()
+
+        if res == "1":  # fail
+            messagebox.showerror("Error", "ID not found!")
+        else:
+            messagebox.showinfo("Success", "The operation was successful.")
+            frame.destroy()
 
     def update_student_function(self, protocol):
         """
