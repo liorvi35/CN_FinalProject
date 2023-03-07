@@ -163,12 +163,12 @@ class FirebaseQueries:
         year = dep.child(student_data[1])
         _id = year.child(student_data[2])
         if _id.get() is None:
-            print(f'Student with ID {student_data[2]} does not exist.')
+            return 1
         else:
             choose = _id.child(student_data[3])
             choose.update({student_data[4]:student_data[5]})
-            print(f'Student with ID {student_data[2]} updated.')
-
+            return 0
+        
     def print_all_students(self):
         """
         :return:
@@ -251,9 +251,9 @@ class FirebaseQueries:
 
     def next_year(self):
         """
-        this function change every student to his next year 
-        if he is on third year - he finishes the degree and delete from the database 
-        :return: 
+        this function change every student to his next year
+        if he is on third year - he finishes the degree and delete from the database
+        :return:
         """
         data = db.reference().get()
         json_obj = json.loads(json.dumps(data))
