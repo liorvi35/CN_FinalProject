@@ -75,8 +75,9 @@ class ServerTCP:
 
                 elif num == "2":  # delete existing student
                     student_data = pickle.loads(client_sock.recv(BUFFER_SIZE))
-                    Application_Queries.FirebaseQueries.delete_existing_student(obj, student_data)
-                    client_sock.sendall(f"Student with id = {student_data[2]} was deleted from database!".encode())
+                    res = Application_Queries.FirebaseQueries.delete_existing_student(obj, student_data)
+                    client_sock.sendall(f"{res}".encode())
+                    print("data=", student_data, " res=", res)
 
                 elif num == "3":  # update existing student
                     student_data = pickle.loads(client_sock.recv(BUFFER_SIZE))
@@ -85,7 +86,8 @@ class ServerTCP:
 
                 elif num == "4":  # print all students
                     all_students = Application_Queries.FirebaseQueries.print_all_students(obj)
-                    client_sock.sendall(json.dumps(all_students).encode())
+                    all_students = json.dumps(all_students)
+                    client_sock.sendall(all_students.encode())
 
                 elif num == "5":  # print student
                     student_data = pickle.loads(client_sock.recv(BUFFER_SIZE))
@@ -98,7 +100,7 @@ class ServerTCP:
                 elif num == "6":  # print min/max avg of students
                     avg = client_sock.recv(BUFFER_SIZE).decode("iso-8859-1")  # 1 - max , 0 - min
                     data = Application_Queries.FirebaseQueries.print_avg_student(obj, avg)
-                    print("data="+data)
+                    print("data=", data)
                     data = pickle.dumps(data)
                     client_sock.sendall(data)
 
@@ -124,9 +126,9 @@ class ServerTCP:
                 elif num == "10":
                     ny = Application_Queries.FirebaseQueries.next_year(obj)
                     if ny == -1:
-                        client_sock.sendall(f"error occurred!".encode())
+                        client_sock.sendall(f"{-1}".encode())
                     else:
-                        client_sock.sendall(f"students went up a year!".encode())
+                        client_sock.sendall(f"{0}".encode())
 
                 client_sock.close()
 
