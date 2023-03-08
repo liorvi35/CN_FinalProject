@@ -46,7 +46,7 @@ def add_to_avgs(obj, x):
     if isinstance(obj, dict):
         for k, v in obj.items():
             if k == 'avg':
-                obj[k] = min(obj[k] + x, 100)  # limit to max 100
+                obj[k] = int(min(int(obj[k]) + int(x), 100))  # limit to max 100
             else:
                 add_to_avgs(v, x)
     elif isinstance(obj, list):
@@ -168,7 +168,7 @@ class FirebaseQueries:
             choose = _id.child(student_data[3])
             choose.update({student_data[4]:student_data[5]})
             return 0
-        
+
     def print_all_students(self):
         """
         :return:
@@ -251,9 +251,9 @@ class FirebaseQueries:
 
     def next_year(self):
         """
-        this function change every student to his next year
-        if he is on third year - he finishes the degree and delete from the database
-        :return:
+        this function change every student to his next year 
+        if he is on third year - he finishes the degree and delete from the database 
+        :return: 
         """
         data = db.reference().get()
         json_obj = json.loads(json.dumps(data))
