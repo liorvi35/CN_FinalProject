@@ -1,3 +1,9 @@
+"""
+this file contains the GUI
+Authors: Lior Vinman , Yoad Tamar
+Date: 08.03.2023
+"""
+
 # imports
 import pickle
 import socket
@@ -24,14 +30,13 @@ RUDP = 1
 
 class GUI:
     """
-
+    this class is the GUI
     """
-
     def __init__(self, master):
         """
-
+        GUI's constructor
+        :param master: the main GUI window (tk.TK())
         """
-
         # main window settings
         self.master = master
         master.geometry(f"{MAIN_WIDTH}x{MAIN_HEIGHT}")
@@ -68,22 +73,16 @@ class GUI:
         self.cred.pack()
 
     def conn_dhcp(self):
-        """
-        TODO - connect to the DHCP server
-        """
         pass
 
     def conn_dns(self):
-        """
-        TODO - connect to the DNS server
-        """
         pass
 
     def conn_app(self, protocol):
         """
-        TODO - connect to the application server - both ways: tcp (protocol = 2), rudp(protocol = 1)
+        this function is the application window
+        :param protocol: connection protocol - tcp(2) or rudp(1)
         """
-
         # window settings
         app_tcp_window = tk.Toplevel(self.master)
         app_tcp_window.title(f"Student Management System - {'TCP' if protocol == TCP else 'RUDP'}")
@@ -133,7 +132,7 @@ class GUI:
 
         # (Q8) Add Factor button
         add_factor_button = tk.Button(app_tcp_window, text="Factor Department",
-                                      command=lambda: self.add_factor_function(protocol), width=20)
+                                      command=lambda: self.factor(protocol), width=20)
         add_factor_button.config(font=('MS Outlook', 12, 'bold'))
         add_factor_button.grid(row=2, column=1, padx=20, pady=10)
 
@@ -146,16 +145,15 @@ class GUI:
 
         # (Q10) Year Up Students button
         year_up_students_button = tk.Button(app_tcp_window, text="Promote Year Department",
-                                            command=lambda: self.year_up_students_function(protocol), width=20)
+                                            command=lambda: self.promote(protocol), width=20)
         year_up_students_button.config(font=('MS Outlook', 12, 'bold'))
         year_up_students_button.grid(row=3, column=1, padx=20, pady=10)
 
     def add_student(self, protocol):
         """
-        this function is the event when add student button clicked
-        :param protocol: protocol number tcp or rudp
+        this function is the event when add new student button clicked
+        :param protocol: tcp or rudp
         """
-
         frame = tk.Toplevel(self.master)
         frame.title("Add New Student")
 
@@ -177,12 +175,11 @@ class GUI:
 
     def valid_add(self, data, frame, protocol):
         """
-        this function is validation for input of the event when student was added
-        :param data: data of input boxes
-        :param frame: add student gui window frame
+        this function is input validation for add new student input
+        :param data: data from input boxes
+        :param frame: last gui frame
         :param protocol: tcp or rudp
         """
-
         lengths = [len(string) > 0 for string in data]
 
         if not all(lengths):
@@ -201,26 +198,28 @@ class GUI:
             messagebox.showerror("Error-Occurred", "Condition must be \'True\' or \'False\' only!")
         else:
             if protocol == RUDP:
-                # TODO - add here RUDP socket that connects to RUDP server that doest the same
+                # TODO - add rudp here
                 pass
             else:
-                tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                tcp_sock.connect(APP_ADDR)
-                tcp_sock.sendall(f"{1}".encode())
-                time.sleep(0.001)
-                tcp_sock.sendall(pickle.dumps(data))
-                time.sleep(0.001)
-                tcp_sock.shutdown(socket.SHUT_RDWR)
-                tcp_sock.close()
-                messagebox.showinfo("Success", f"Student with ID: {data[1]} was added successfully!")
-                frame.destroy()
+                try:
+                    tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    tcp_sock.connect(APP_ADDR)
+                    tcp_sock.sendall(f"{1}".encode())
+                    time.sleep(0.001)
+                    tcp_sock.sendall(pickle.dumps(data))
+                    time.sleep(0.001)
+                    tcp_sock.shutdown(socket.SHUT_RDWR)
+                    tcp_sock.close()
+                    messagebox.showinfo("Success", f"Student with ID: {data[1]} was added successfully!")
+                    frame.destroy()
+                except Exception as e:
+                    print(e)
 
     def delete_student(self, protocol):
         """
         this function is the event when delete student button clicked
-        :param protocol: protocol number tcp or rudp
+        :param protocol: tcp or rudp
         """
-
         frame = tk.Toplevel(self.master)
         frame.title("Delete Existing Student")
 
@@ -241,26 +240,28 @@ class GUI:
 
     def valid_del(self, data, protocol, frame):
         """
-        this function is validation for input of the event when student was deleted
-        :param data: data of input boxes
-        :param frame: add student gui window frame
+        this function is input validation for delete student input
+        :param data: data from input boxes
+        :param frame: last gui frame
         :param protocol: tcp or rudp
         """
-
         res = 1
         if protocol == RUDP:
-            # TODO - add here RUDP socket that connects to RUDP server that doest the same
+            # TODO - add rudp here
             pass
         else:
-            tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            tcp_sock.connect(APP_ADDR)
-            tcp_sock.sendall(f"{2}".encode())
-            time.sleep(0.0001)
-            tcp_sock.sendall(pickle.dumps(data))
-            time.sleep(0.0001)
-            res = int(tcp_sock.recv(BUFFER_SIZE).decode("iso-8859-1"))
-            tcp_sock.shutdown(socket.SHUT_RDWR)
-            tcp_sock.close()
+            try:
+                tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                tcp_sock.connect(APP_ADDR)
+                tcp_sock.sendall(f"{2}".encode())
+                time.sleep(0.0001)
+                tcp_sock.sendall(pickle.dumps(data))
+                time.sleep(0.0001)
+                res = int(tcp_sock.recv(BUFFER_SIZE).decode("iso-8859-1"))
+                tcp_sock.shutdown(socket.SHUT_RDWR)
+                tcp_sock.close()
+            except Exception as e:
+                print(e)
 
         if res == 1:
             messagebox.showerror("Error-Occurred", "ID not found!")
@@ -270,9 +271,9 @@ class GUI:
 
     def update_student(self, protocol):
         """
-
+        this function is the event when update student button clicked
+        :param protocol: tcp or rudp
         """
-
         frame = tk.Toplevel(self.master)
         frame.title("Update Existing Student")
 
@@ -293,9 +294,11 @@ class GUI:
 
     def valid_update(self, data, frame, protocol):
         """
-
+        this function is input validation for update student input
+        :param data: data from input boxes
+        :param frame: last gui frame
+        :param protocol: tcp or rudp
         """
-
         lengths = [len(string) > 0 for string in data]
         if not all(lengths):
             messagebox.showerror("Error-Occurred", "All data must be filled!")
@@ -324,18 +327,21 @@ class GUI:
                     messagebox.showerror("Error-Occurred", "Condition must be: \'True\' or \'False\' only!")
             res = 1
             if protocol == RUDP:
-                # TODO - add here RUDP socket that connects to RUDP server that doest the same
+                # TODO - add rudp here
                 pass
             else:
-                tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                tcp_sock.connect(APP_ADDR)
-                tcp_sock.sendall(f"{3}".encode())
-                time.sleep(0.001)
-                tcp_sock.sendall(pickle.dumps(data))
-                time.sleep(0.001)
-                res = int(tcp_sock.recv(BUFFER_SIZE).decode("iso-8859-1"))
-                tcp_sock.shutdown(socket.SHUT_RDWR)
-                tcp_sock.close()
+                try:
+                    tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    tcp_sock.connect(APP_ADDR)
+                    tcp_sock.sendall(f"{3}".encode())
+                    time.sleep(0.001)
+                    tcp_sock.sendall(pickle.dumps(data))
+                    time.sleep(0.001)
+                    res = int(tcp_sock.recv(BUFFER_SIZE).decode("iso-8859-1"))
+                    tcp_sock.shutdown(socket.SHUT_RDWR)
+                    tcp_sock.close()
+                except Exception as e:
+                    print(e)
 
             if res == 1:  # fail
                 messagebox.showerror("Error", "ID not found!")
@@ -344,31 +350,36 @@ class GUI:
                 frame.destroy()
 
     def print_all(self, protocol):
-        data = ""
+        """
+        this function is the event when print all button clicked
+        :param protocol: tcp or rudp
+        """
+        data = {}
         if protocol == RUDP:
+            # TODO - add rudp here
             pass
         else:
-            tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            tcp_sock.connect(APP_ADDR)
-            tcp_sock.sendall(f"{4}".encode())
-            time.sleep(0.001)
-            data = b""
-            while True:
-                segment = tcp_sock.recv(1024)
-                if not segment:
-                    break
-                data += segment
-            time.sleep(0.01)
-            data = json.loads(data)
-            tcp_sock.shutdown(socket.SHUT_RDWR)
-            tcp_sock.close()
+            try:
+                tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                tcp_sock.connect(APP_ADDR)
+                tcp_sock.sendall(f"{4}".encode())
+                time.sleep(0.001)
+                data = b""
+                while True:
+                    segment = tcp_sock.recv(1024)
+                    if not segment:
+                        break
+                    data += segment
+                time.sleep(0.01)
+                tcp_sock.shutdown(socket.SHUT_RDWR)
+                tcp_sock.close()
+                data = json.loads(data)
+            except Exception as e:
+                print(e)
 
         self.display_table(data)
 
     def print_specific(self, protocol):
-        """
-
-        """
 
         frame = tk.Toplevel(self.master)
         frame.title("Delete Existing Student")
@@ -389,71 +400,192 @@ class GUI:
         submit_button.grid(row=11, column=1, pady=10)
 
     def valid_specific(self, data, protocol, frame):
-        # TODO - compleate
-        pass
+        """
 
-    def print_high_low(self, protocol, avg):
-        data = []
+        """
+        res = "1"
         if protocol == 1:
+            # TODO - add rudp here
             pass
         else:
-            tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            tcp_sock.connect(APP_ADDR)
-            tcp_sock.sendall(f"{6}".encode())
-            time.sleep(0.001)
-            tcp_sock.sendall(f"{avg}".encode())
-            time.sleep(0.001)
-            data = b""
-            while True:
-                segment = tcp_sock.recv(1024)
-                if not segment:
-                    break
-                data += segment
-            time.sleep(0.001)
-            data = pickle.loads(data)
+            try:
+                tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                tcp_sock.connect(APP_ADDR)
+                tcp_sock.sendall(f"{5}".encode())
+                time.sleep(0.0001)
+                tcp_sock.sendall(pickle.dumps(data))
+                time.sleep(0.0001)
+                res = tcp_sock.recv(BUFFER_SIZE).decode("iso-8859-1")
+                tcp_sock.shutdown(socket.SHUT_RDWR)
+                tcp_sock.close()
+            except Exception as e:
+                print(e)
+
+            print(res)
+        # TODO - error HERE!!!!
+        if res == "1":
+            messagebox.showerror("Error-Occurred", "ID not found!")
+        else:
+            res = res.replace("\'", "\"")
+            self.print_list(res)
+            frame.destroy()
+
+    def print_high_low(self, protocol, avg):
+        """
+        this function is the event when print maximum or minimum avg button is clicked
+        :param protocol: tcp or rudp
+        :param avg: max or min
+        """
+        data = []
+        if protocol == 1:
+            # TODO - add rudp here
+            pass
+        else:
+            try:
+                tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                tcp_sock.connect(APP_ADDR)
+                tcp_sock.sendall(f"{6}".encode())
+                time.sleep(0.001)
+                tcp_sock.sendall(f"{avg}".encode())
+                time.sleep(0.001)
+                data = b""
+                while True:
+                    segment = tcp_sock.recv(1024)
+                    if not segment:
+                        break
+                    data += segment
+                time.sleep(0.001)
+                data = pickle.loads(data)
+                tcp_sock.shutdown(socket.SHUT_RDWR)
+                tcp_sock.close()
+            except Exception as e:
+                print(e)
 
         self.print_list(data)
 
     def print_condition(self, protocol):
+        """
+        this function is the event when print condition button is clicked
+        :param protocol: tcp or rudp
+        """
         data = []
         if protocol == 1:
+            # TODO - add rudp here
             pass
         else:
-            tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            tcp_sock.connect(APP_ADDR)
-            tcp_sock.sendall(f"{9}".encode())
-            time.sleep(0.001)
-            data = b""
-            while True:
-                segment = tcp_sock.recv(BUFFER_SIZE)
-                if not segment:
-                    break
-                data += segment
-            time.sleep(0.001)
-            data = pickle.loads(data)
+            try:
+                tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                tcp_sock.connect(APP_ADDR)
+                tcp_sock.sendall(f"{9}".encode())
+                time.sleep(0.001)
+                data = b""
+                while True:
+                    segment = tcp_sock.recv(BUFFER_SIZE)
+                    if not segment:
+                        break
+                    data += segment
+                time.sleep(0.001)
+                data = pickle.loads(data)
+                tcp_sock.shutdown(socket.SHUT_RDWR)
+                tcp_sock.close()
+            except Exception as e:
+                print(e)
 
         self.print_list(data)
 
+
+    def factor(self, protocol):
+        """
+        this function is the event when factor button is clicked
+        :param protocol: tcp or rudp
+        """
+        frame = tk.Toplevel(self.master)
+        frame.title("Delete Existing Student")
+
+        label = tk.Label(frame, text="Number of points")
+        label.grid(row=0, column=0, padx=10, pady=5, sticky="W")
+        input_box = tk.Entry(frame)
+        input_box.grid(row=0, column=1, padx=10, pady=5, sticky="E")
+
+        submit_button = tk.Button(frame, text="Submit",
+                                  command=lambda: self.factor_valid(input_box.get(), protocol, frame))
+        submit_button.grid(row=11, column=1, pady=10)
+
+    def factor_valid(self, data, protocol, frame):
+        """
+        this function is input validation for factor input
+        :param data: data from input boxes
+        :param frame: last gui frame
+        :param protocol: tcp or rudp
+        """
+
+        if not (0 < int(data) <= 100):
+            messagebox.showerror("Error-Occurred", "Points must be between 1 - 100 only!")
+        else:
+
+            res = -1
+
+            if protocol == RUDP:
+                # TODO - add rudp here
+                pass
+            else:
+                try:
+                    tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    tcp_sock.connect(APP_ADDR)
+                    tcp_sock.sendall(f"{8}".encode())
+                    time.sleep(0.001)
+                    tcp_sock.sendall(f"{data}".encode())
+                    time.sleep(0.001)
+                    res = int(tcp_sock.recv(BUFFER_SIZE).decode())
+                    tcp_sock.shutdown(socket.SHUT_RDWR)
+                    tcp_sock.close()
+                except Exception as e:
+                    print(e)
+
+            if res == -1:
+                messagebox.showerror("Error-Occurred", "Error-Occurred")
+            else:
+                messagebox.showinfo("Success", f"All students got factor of {data} points!")
+                frame.destroy()
+
+    def promote(self, protocol):
+        """
+        this function is the event when promote year button clicked
+        :param protocol: tcp or rudp
+        """
+        if protocol == RUDP:
+            # TODO - add rudp here
+            pass
+        else:
+            try:
+                tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                tcp_sock.connect(APP_ADDR)
+                tcp_sock.sendall(f"{10}".encode())
+                time.sleep(0.001)
+                tcp_sock.shutdown(socket.SHUT_RDWR)
+                tcp_sock.close()
+            except Exception as e:
+                print(e)
+            messagebox.showinfo("Success", "All student were promoted up a year!")
+
+
     def display_table(self, json_data):
-        # create the GUI window
+        """
+        this function prints all the database in table
+        :param json_data: json format of the database
+        """
         root = tk.Toplevel(self.master)
         root.title("Student Information")
-
-        # create a notebook widget to hold the tables
         notebook = ttk.Notebook(root)
 
-        # iterate through each degree program in the JSON data
         for degree in json_data.keys():
-            # create a new frame for each degree program
             frame = ttk.Frame(notebook)
             notebook.add(frame, text=degree)
 
-            # create the table headers
             columns = \
                 ("ID", "First Name", "Last Name", "Phone Number", "E-Mail", "Degree", "Track", "Average", "Condition")
             tree = ttk.Treeview(frame, columns=columns, show="headings")
 
-            # set the column widths and alignments
             tree.column("ID", width=50, anchor="center")
             tree.column("First Name", width=100, anchor="w")
             tree.column("Last Name", width=100, anchor="w")
@@ -464,11 +596,9 @@ class GUI:
             tree.column("Average", width=50, anchor="center")
             tree.column("Condition", width=50, anchor="center")
 
-            # set the column header text
             for col in columns:
                 tree.heading(col, text=col)
 
-            # add the data to the table
             for year in json_data[degree].keys():
                 for id_num in json_data[degree][year].keys():
                     student = json_data[degree][year][id_num]
@@ -482,17 +612,18 @@ class GUI:
                                                    student["academic"]["avg"],
                                                    student["academic"]["condition"]))
 
-            # pack the table into the frame
             tree.pack(fill="both", expand=True)
 
-        # pack the notebook into the root window and start the event loop
         notebook.pack(fill="both", expand=True)
 
     def print_list(self, json_list):
+        """
+        this function gets a list of students (by json) and print them in table
+        :param json_list: json list of students
+        """
         root = tk.Tk()
         root.title("Student Information")
 
-        # create a treeview with columns
         tree = ttk.Treeview(root, columns=(
         'ID', 'First Name', 'Last Name', 'Phone Number', 'E-Mail', 'Degree', 'Track', 'Average', 'Condition'),
                             show='headings')
@@ -515,7 +646,6 @@ class GUI:
         tree.heading('Average', text='Average')
         tree.heading('Condition', text='Condition')
 
-        # add data to the treeview
         for i, data in enumerate(json_list):
             student_info = data['info']
             student_academic = data['academic']
@@ -524,9 +654,9 @@ class GUI:
             student_info['email'], student_academic['degree'], student_academic['track'], student_academic['avg'],
             student_academic['condition']))
 
-        # pack and display the treeview
         tree.pack(expand=True, fill='both')
         root.mainloop()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
