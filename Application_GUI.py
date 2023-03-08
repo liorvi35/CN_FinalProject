@@ -1,9 +1,3 @@
-"""
-this file contains the application GUI (Graphical User Interface)
-Authors: Lior Vinman, Yoad Tamar
-Date: 07.03.2023
-"""
-
 # imports
 import pickle
 import socket
@@ -24,477 +18,515 @@ BUFFER_SIZE = 1024
 APP_HEIGHT = 220
 APP_WIDTH = 750
 APP_ADDR = ("127.0.0.1", 9090)
-
-
-def is_valid_email(email):
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    return re.match(pattern, email)
+TCP = 2
+RUDP = 1
 
 
 class GUI:
     """
-    this class is the application GUI
+
     """
 
     def __init__(self, master):
         """
-        this is the GUI constructor, creating the main window
+
         """
+
+        # main window settings
         self.master = master
         master.geometry(f"{MAIN_WIDTH}x{MAIN_HEIGHT}")
         master.title("Computer Networking - Final Project")
         master.config()
 
-        # DHCP button
-        self.dhcp_button = tk.Button(master, text="Connect to DHCP-Server", command=self.dhcp_function, width=20)
+        # DHCP button settings
+        self.dhcp_button = tk.Button(master, text="Connect to DHCP-Server",
+                                     command=self.conn_dhcp, width=20)
         self.dhcp_button.config(font=('MS Outlook', 12, 'bold'))
         self.dhcp_button.pack(padx=20, pady=20)
 
-        # DNS button
-        self.dns_button = tk.Button(master, text="Use DNS-Server", command=self.dns_function, width=20)
+        # DNS button settings
+        self.dns_button = tk.Button(master, text="Use DNS-Server",
+                                    command=self.conn_dns, width=20)
         self.dns_button.config(font=('MS Outlook', 12, 'bold'))
         self.dns_button.pack(padx=20, pady=20)
 
-        # APP_RUDP button
-        self.app_rudp_button = tk.Button(master, text="Application (R-UDP)", command=lambda: self.app_function(1),
-                                         width=20)
+        # APP_RUDP button settings
+        self.app_rudp_button = tk.Button(master, text="Application (R-UDP)",
+                                         command=lambda: self.conn_app(RUDP), width=20)
         self.app_rudp_button.config(font=('MS Outlook', 12, 'bold'))
         self.app_rudp_button.pack(padx=20, pady=20)
 
-        # APP_TCP button
-        self.app_tcp_button = tk.Button(master, text="Application (TCP)", command=lambda: self.app_function(2),
-                                        width=20)
+        # APP_TCP button settings
+        self.app_tcp_button = tk.Button(master, text="Application (TCP)",
+                                        command=lambda: self.conn_app(TCP), width=20)
         self.app_tcp_button.config(font=('MS Outlook', 12, 'bold'))
         self.app_tcp_button.pack(padx=20, pady=20)
 
-        # credits
+        # credits label settings
         self.cred = tk.Label(master, text="Lior Vinman & Yoad Tamar 2023 \u00A9")
         self.cred.config(font=("MS Outlook", 10))
         self.cred.pack()
 
-    def dhcp_function(self):
+    def conn_dhcp(self):
         """
-        TODO - add here DHCP connection and usage (udp ports - 67,68)
+        TODO - connect to the DHCP server
         """
-        print("DHCP button clicked")
+        pass
 
-    def dns_function(self):
+    def conn_dns(self):
         """
-        this function is the event when DNS button clicked,
-        it opens a new window where the user can paste url and get the domain's IP address
+        TODO - connect to the DNS server
         """
-        dns_window = tk.Toplevel(self.master)  # open a new window above
-        dns_window.geometry(f"{DNS_WIDTH}x{DNS_HEIGHT}")  # set window size
-        dns_window.title("Domain Name System")  # set window title
+        pass
 
-        dns_label = tk.Label(dns_window, text="Enter domain name:")  # text label
-        dns_label.config(font=("MS Outlook", 15))
-        dns_label.pack(padx=20, pady=10)
-
-        self.dns_entry = tk.Entry(dns_window)  # input box
-        self.dns_entry.pack(padx=20, pady=10)
-        self.dns_output_label = tk.Label(dns_window, text="")
-        self.dns_output_label.pack(padx=20, pady=10)
-
-        # submit button
-        dns_submit = tk.Button(dns_window, text="Get Domain's IP-Address!", width=20, command=self.dns_submit_function)
-        dns_submit.config(font=('MS Outlook', 10, 'bold'))
-        dns_submit.pack()
-
-    def dns_submit_function(self):
+    def conn_app(self, protocol):
         """
-        this function is called after the user entered url for getting IP, it opens connection with the DNS Server
-        and getting IP (or error message) from him
+        TODO - connect to the application server - both ways: tcp (protocol = 2), rudp(protocol = 1)
         """
-        data = self.dns_entry.get()
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.sendto(data.encode(), DNS_ADDR)
-        data = sock.recv(BUFFER_SIZE).decode()
-        sock.shutdown(socket.SHUT_RDWR)
-        sock.close()
-
-        text = data if data == "Non-Existent Domain" else f"Domain's IP Address = {data}"
-
-        self.dns_output_label.config(text=text)
-
-    def app_function(self, protocol):
-        """
-        this function is the event when application (both rudp and tcp) button is clicked
-        :param protocol: 1 if called by rudp, 2 if called by tcp
-        """
+        # window settings
         app_tcp_window = tk.Toplevel(self.master)
-
-        title = "TCP" if protocol == 2 else "RUDP"
-
-        app_tcp_window.title(f"Student Management System - {title}")
-
+        app_tcp_window.title(f"Student Management System - {'TCP' if protocol == TCP else 'RUDP'}")
         app_tcp_window.geometry(f"{APP_WIDTH}x{APP_HEIGHT}")
 
-        # Add New Student button
+        # (Q1) Add New Student button
         add_student_button = tk.Button(app_tcp_window, text="Add New Student",
-                                       command=lambda: self.add_student_function(protocol), width=20)
+                                       command=lambda: self.add_student(protocol), width=20)
         add_student_button.config(font=('MS Outlook', 12, 'bold'))
         add_student_button.grid(row=0, column=0, padx=20, pady=10)
 
-        # Delete Existing Student button
+        # (Q2) Delete Existing Student button
         delete_student_button = tk.Button(app_tcp_window, text="Delete Existing Student",
-                                          command=lambda: self.delete_student_function(protocol), width=20)
+                                          command=lambda: self.delete_student(protocol), width=20)
         delete_student_button.config(font=('MS Outlook', 12, 'bold'))
         delete_student_button.grid(row=0, column=1, padx=20, pady=10)
 
-        # Update Existing Student button
+        # (Q3) Update Existing Student button
         update_student_button = tk.Button(app_tcp_window, text="Update Existing Student",
-                                          command=lambda: self.update_student_function(protocol), width=20)
+                                          command=lambda: self.update_student(protocol), width=20)
         update_student_button.config(font=('MS Outlook', 12, 'bold'))
         update_student_button.grid(row=0, column=2, padx=20, pady=10)
 
-        # Get All Students button
+        # (4) Get All Students button
         get_all_students_button = tk.Button(app_tcp_window, text="Print All Students",
-                                            command=lambda: self.get_all_students_function(protocol), width=20)
+                                            command=lambda: self.print_all(protocol), width=20)
         get_all_students_button.config(font=('MS Outlook', 12, 'bold'))
         get_all_students_button.grid(row=1, column=0, padx=20, pady=10)
 
-        # Get Specific Student button
+        # (Q5) Get Specific Student button
         get_specific_student_button = tk.Button(app_tcp_window, text="Print Specific Student",
-                                                command=lambda: self.get_specific_student_function(protocol), width=20)
+                                                command=lambda: self.print_specific(protocol), width=20)
         get_specific_student_button.config(font=('MS Outlook', 12, 'bold'))
         get_specific_student_button.grid(row=1, column=1, padx=20, pady=10)
 
-        # Get Outstanding Student button
+        # (Q6) Get Highest Average
         get_outstanding_student_button = tk.Button(app_tcp_window, text="Print Highest Average",
-                                                   command=lambda: self.get_max_avg(protocol), width=20)
+                                                   command=lambda: self.print_high_low(protocol, 1), width=20)
         get_outstanding_student_button.config(font=('MS Outlook', 12, 'bold'))
         get_outstanding_student_button.grid(row=1, column=2, padx=20, pady=10)
 
-        # Get Bad Student button
+        # (Q7) Get Lowest Average
         get_bad_student_button = tk.Button(app_tcp_window, text="Print Lowest Average",
-                                           command=lambda: self.get_min_function(protocol), width=20)
+                                           command=lambda: self.print_high_low(protocol, 0), width=20)
         get_bad_student_button.config(font=('MS Outlook', 12, 'bold'))
         get_bad_student_button.grid(row=2, column=0, padx=20, pady=10)
 
-        # Add Factor button
+        # (Q8) Add Factor button
         add_factor_button = tk.Button(app_tcp_window, text="Factor Department",
                                       command=lambda: self.add_factor_function(protocol), width=20)
         add_factor_button.config(font=('MS Outlook', 12, 'bold'))
         add_factor_button.grid(row=2, column=1, padx=20, pady=10)
 
-        # Get Condition Students button
+        # (Q9) Get Condition Students button
         get_condition_students_button = tk.Button(app_tcp_window, text="Print Condition Students",
-                                                  command=lambda: self.get_condition_students_function(protocol),
+                                                  command=lambda: self.print_condition(protocol),
                                                   width=20)
         get_condition_students_button.config(font=('MS Outlook', 12, 'bold'))
         get_condition_students_button.grid(row=2, column=2, padx=20, pady=10)
 
-        # Year Up Students button
+        # (Q10) Year Up Students button
         year_up_students_button = tk.Button(app_tcp_window, text="Promote Year Department",
                                             command=lambda: self.year_up_students_function(protocol), width=20)
         year_up_students_button.config(font=('MS Outlook', 12, 'bold'))
         year_up_students_button.grid(row=3, column=1, padx=20, pady=10)
 
-    def add_student_function(self, protocol):
+    def add_student(self, protocol):
         """
-        TODO - add input validation (no input, ...)
-        this function is the event when add student button is clicked,
-        its opens a window with input boxes to get information
+        this function is the event when add student button clicked
+        :param protocol: protocol number tcp or rudp
         """
-        if protocol == 1:  # rudp
-            pass
-        else:  # tcp
 
-            frame = tk.Toplevel(self.master)
-            frame.title("Add New Student")
-            labels = ["Department", "ID", "First Name", "Last Name", "E-Mail", "Phone Number", "Degree", "Track",
-                      "Average", "Condition (True/False)"]
-            inputs = []
-            for i in range(0, 10):
-                label = tk.Label(frame, text=f"{labels[i]}:")
-                label.grid(row=i, column=0, padx=10, pady=5, sticky="W")
+        frame = tk.Toplevel(self.master)
+        frame.title("Add New Student")
 
-                input_box = tk.Entry(frame)
-                input_box.grid(row=i, column=1, padx=10, pady=5, sticky="E")
-                inputs.append(input_box)
+        labels = ["Department", "ID", "First Name", "Last Name", "E-Mail", "Phone Number", "Degree", "Track",
+                  "Average", "Condition (True/False)"]
+        inputs = []
 
-            submit_button = tk.Button(frame, text="Submit",
-                                      command=lambda: self.valid([input_box.get() for input_box in inputs], frame))
-            submit_button.grid(row=11, column=1, pady=10)
+        for i in range(0, 10):
+            label = tk.Label(frame, text=f"{labels[i]}:")
+            label.grid(row=i, column=0, padx=10, pady=5, sticky="W")
+            input_box = tk.Entry(frame)
+            input_box.grid(row=i, column=1, padx=10, pady=5, sticky="E")
+            inputs.append(input_box)
 
-    def valid(self, data, frame):
-        # [department, id, first name, last name, email, phone number, degree, track, avg, condition]
-        #         messagebox.showerror("Error", "Password must be at least 8 characters long")
+        submit_button = tk.Button(frame, text="Submit",
+                                  command=lambda: self.valid_add([input_box.get() for input_box in inputs], frame,
+                                                             protocol))
+        submit_button.grid(row=11, column=1, pady=10)
+
+    def valid_add(self, data, frame, protocol):
+        """
+        this function is validation for input of the event when student was added
+        :param data: data of input boxes
+        :param frame: add student gui window frame
+        :param protocol: tcp or rudp
+        """
+
         lengths = [len(string) > 0 for string in data]
-        # if not all(lengths):
-        #    messagebox.showerror("Error", "you must fill all the boxes")
-        if any(char.isdigit() for char in data[0]):
-            messagebox.showerror("Error", "department must be without numbers")
+
+        if not all(lengths):
+            messagebox.showerror("Error-Occurred", "All data must be filled!")
+        elif any(char.isdigit() for char in data[0]):
+            messagebox.showerror("Error-Occurred", "Department must contain letters only!")
         elif not data[1].isdigit():
-            messagebox.showerror("Error", "id nust contains only numbers")
-        elif not is_valid_email(data[4]):
-            messagebox.showerror("Error", "please enter valid email \n  example@example.com  ")
+            messagebox.showerror("Error-Occurred", "ID must contain numbers only!")
+        elif not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", data[4]):
+            messagebox.showerror("Error-Occurred", "E-Mail should have in valid email form!")
         elif not data[5].isdigit():
-            messagebox.showerror("Error", "phone number must be a number")
-        elif not data[8].isdigit():
-            messagebox.showerror("Error", "avg must be a number")
-        elif not (0 <= int(data[8]) <= 100):
-            messagebox.showerror("Error", "avg must be a number between 0 - 100")
+            messagebox.showerror("Error-Occurred", "Phone-Number must contain numbers only!")
+        elif (not data[8].isdigit()) or (not (0 <= int(data[8]) <= 100)):
+            messagebox.showerror("Error-Occurred", "Average must be a number in range: 0 - 100!")
         elif not (data[9] == "False" or data[9] == "True"):
-            messagebox.showerror("Error", "condition nust be True or False")
+            messagebox.showerror("Error-Occurred", "Condition must be \'True\' or \'False\' only!")
         else:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect(APP_ADDR)
-            sock.sendall(f"{1}".encode())
+            if protocol == RUDP:
+                # TODO - add here RUDP socket that connects to RUDP server that doest the same
+                pass
+            else:
+                tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                tcp_sock.connect(APP_ADDR)
+                tcp_sock.sendall(f"{1}".encode())
+                time.sleep(0.001)
+                tcp_sock.sendall(pickle.dumps(data))
+                time.sleep(0.001)
+                tcp_sock.shutdown(socket.SHUT_RDWR)
+                tcp_sock.close()
+                messagebox.showinfo("Success", f"Student with ID: {data[1]} was added successfully!")
+                frame.destroy()
+
+    def delete_student(self, protocol):
+        """
+        this function is the event when delete student button clicked
+        :param protocol: protocol number tcp or rudp
+        """
+
+        frame = tk.Toplevel(self.master)
+        frame.title("Delete Existing Student")
+
+        labels = ["Department", "Year", "ID"]
+        inputs = []
+
+        for i in range(0, 3):
+            label = tk.Label(frame, text=f"{labels[i]}:")
+            label.grid(row=i, column=0, padx=10, pady=5, sticky="W")
+            input_box = tk.Entry(frame)
+            input_box.grid(row=i, column=1, padx=10, pady=5, sticky="E")
+            inputs.append(input_box)
+
+        submit_button = tk.Button(frame, text="Submit",
+                                  command=lambda: self.valid_del([input_box.get() for input_box in inputs], protocol,
+                                                                 frame))
+        submit_button.grid(row=11, column=1, pady=10)
+
+    def valid_del(self, data, protocol, frame):
+        """
+        this function is validation for input of the event when student was deleted
+        :param data: data of input boxes
+        :param frame: add student gui window frame
+        :param protocol: tcp or rudp
+        """
+
+        res = 1
+        if protocol == RUDP:
+            # TODO - add here RUDP socket that connects to RUDP server that doest the same
+            pass
+        else:
+            tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            tcp_sock.connect(APP_ADDR)
+            tcp_sock.sendall(f"{2}".encode())
             time.sleep(0.0001)
-            sock.sendall( pickle.dumps(data))
+            tcp_sock.sendall(pickle.dumps(data))
             time.sleep(0.0001)
-            sock.shutdown(socket.SHUT_RDWR)
-            sock.close()
-            messagebox.showinfo("Success", "The operation was successful.")
+            res = int(tcp_sock.recv(BUFFER_SIZE).decode("iso-8859-1"))
+            tcp_sock.shutdown(socket.SHUT_RDWR)
+            tcp_sock.close()
+
+        if res == 1:
+            messagebox.showerror("Error-Occurred", "ID not found!")
+        else:
+            messagebox.showinfo("Success", f"Student with ID: {data[2]} was deleted successfully!")
             frame.destroy()
 
-    def delete_student_function(self, protocol):
+    def update_student(self, protocol):
         """
-        TODO - add input validation (no input, ...)
-        this function is the event when delete student button is clicked,
-        its opens a window with input boxes to get information
+
         """
-        if protocol == 1:  # rudp
-            pass
-        else:  # tcp
 
-            frame = tk.Toplevel(self.master)
-            frame.title("Add New Student")
-            labels = ["Department", "Year", "ID"]
-            inputs = []
-            for i in range(0, 3):
-                label = tk.Label(frame, text=f"{labels[i]}:")
-                label.grid(row=i, column=0, padx=10, pady=5, sticky="W")
+        frame = tk.Toplevel(self.master)
+        frame.title("Update Existing Student")
 
-                input_box = tk.Entry(frame)
-                input_box.grid(row=i, column=1, padx=10, pady=5, sticky="E")
-                inputs.append(input_box)
+        labels = ["Department", "Year", "ID", "Info/Academic", "Update-Section", "New Data"]
+        inputs = []
 
-            submit_button = tk.Button(frame, text="Submit",
-                                      command=lambda: self.valid_del([input_box.get() for input_box in inputs], frame))
-            submit_button.grid(row=11, column=1, pady=10)
+        for i in range(0, 6):
+            label = tk.Label(frame, text=f"{labels[i]}:")
+            label.grid(row=i, column=0, padx=10, pady=5, sticky="W")
+            input_box = tk.Entry(frame)
+            input_box.grid(row=i, column=1, padx=10, pady=5, sticky="E")
+            inputs.append(input_box)
 
-    def valid_del(self, data, frame):
+        submit_button = tk.Button(frame, text="Submit",
+                                  command=lambda: self.valid_update([input_box.get() for input_box in inputs], frame,
+                                                                 protocol))
+        submit_button.grid(row=11, column=1, pady=10)
+
+    def valid_update(self, data, frame, protocol):
         """
-        TODO - input validation
-        """
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(APP_ADDR)
-        sock.sendall(f"{2}".encode())
-        time.sleep(0.0001)
-        sock.sendall(pickle.dumps(data))
-        time.sleep(0.0001)
-        res = sock.recv(BUFFER_SIZE).decode("iso-8859-1")
-        sock.shutdown(socket.SHUT_RDWR)
-        sock.close()
 
-        if res == "1":  # fail
-            messagebox.showerror("Error", "ID not found!")
+        """
+
+        lengths = [len(string) > 0 for string in data]
+        if not all(lengths):
+            messagebox.showerror("Error-Occurred", "All data must be filled!")
         else:
-            messagebox.showinfo("Success", "The operation was successful.")
-            frame.destroy()
+            if not (data[1] == "year1" or data[1] == "year2" or data[1] == "year3"):
+                messagebox.showerror("Error-Occurred", "Year must be: \'year1\' or \'year2\' or \'year3\' only!")
+            elif not data[2].isdigit():
+                messagebox.showerror("Error-Occurred", "ID must contain numbers only!")
+            elif not (data[3] == "info" or data[3] == "academic"):
+                messagebox.showerror("Error-Occurred", "Info/Academic must be: \'info\' or \'academic\' only!")
+            elif data[3] == "info":
+                if not (data[4] == "email" or data[4] == "firstName" or data[4] == "lastName" or data[4] == "phoneNumber"):
+                    messagebox.showerror("Error-Occurred", "Info update-section must be: \'email\' or \'firstName\' or \'lastName\' or \'phoneNumber\' only!")
+                elif data[4] == "email" and not (re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", data[5])):
+                    messagebox.showerror("Error-Occurred", "E-Mail should have in valid email form!")
+                elif data[4] == "phoneNumber" and not data[5].isdigit():
+                    messagebox.showerror("Error-Occurred", "Phone-Number must contain numbers only!")
+            elif data[3] == "academic":
+                if not (data[4] == "avg" or data[4] == "condition" or data[4] == "degree" or data[4] == "track"):
+                    messagebox.showerror("Error-Occurred", "Academic update-section must be: \'avg\' or \'condition\' or \'degree\' or \'track\' only!")
+                elif data[4] == "avg" and not data[5].isdigit():
+                    messagebox.showerror("Error-Occurred", "avg must be a number")
+                elif data[4] == "avg" and not (0 <= int(data[5]) <= 100):
+                    messagebox.showerror("Error-Occurred", "Average must be a number in range: 0 - 100!")
+                elif data[4] == "condition" and not (data[5] == "False" or data[5] == "True"):
+                    messagebox.showerror("Error-Occurred", "Condition must be: \'True\' or \'False\' only!")
+            res = 1
+            if protocol == RUDP:
+                # TODO - add here RUDP socket that connects to RUDP server that doest the same
+                pass
+            else:
+                tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                tcp_sock.connect(APP_ADDR)
+                tcp_sock.sendall(f"{3}".encode())
+                time.sleep(0.001)
+                tcp_sock.sendall(pickle.dumps(data))
+                time.sleep(0.001)
+                res = int(tcp_sock.recv(BUFFER_SIZE).decode("iso-8859-1"))
+                tcp_sock.shutdown(socket.SHUT_RDWR)
+                tcp_sock.close()
 
-    def update_student_function(self, protocol):
-        """
-        TODO - i think its dont working
-        this function is the event when update student button is clicked
-        """
-        if protocol == 1:  # rudp
+            if res == 1:  # fail
+                messagebox.showerror("Error", "ID not found!")
+            else:
+                messagebox.showinfo("Success", "The operation was successful.")
+                frame.destroy()
+
+    def print_all(self, protocol):
+        data = ""
+        if protocol == RUDP:
             pass
-        else:  # tcp
-            frame = tk.Toplevel(self.master)
-            frame.title("Add New Student")
-            labels = ["Department", "Year", "ID", "info/academic", "update sub", "update"]
-            inputs = []
-            for i in range(0, 6):
-                label = tk.Label(frame, text=f"{labels[i]}:")
-                label.grid(row=i, column=0, padx=10, pady=5, sticky="W")
+        else:
+            tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            tcp_sock.connect(APP_ADDR)
+            tcp_sock.sendall(f"{4}".encode())
+            time.sleep(0.001)
+            data = b""
+            while True:
+                segment = tcp_sock.recv(1024)
+                if not segment:
+                    break
+                data += segment
+            time.sleep(0.01)
+            data = json.loads(data)
+            tcp_sock.shutdown(socket.SHUT_RDWR)
+            tcp_sock.close()
 
-                input_box = tk.Entry(frame)
-                input_box.grid(row=i, column=1, padx=10, pady=5, sticky="E")
-                inputs.append(input_box)
+        self.display_table(data)
 
-            submit_button = tk.Button(frame, text="Submit",
-                                      command=lambda: (sock := socket.socket(socket.AF_INET, socket.SOCK_STREAM),
-                                                       sock.connect(APP_ADDR),
-                                                       sock.sendall(f"{3}".encode()),
-                                                       time.sleep(0.0001),
-                                                       sock.sendall(
-                                                           pickle.dumps([input_box.get() for input_box in inputs])),
-                                                       time.sleep(0.0001),
-                                                       sock.shutdown(socket.SHUT_RDWR),
-                                                       sock.close(),
-                                                       frame.destroy()))
-            submit_button.grid(row=11, column=1, pady=10)
-
-    def get_all_students_function(self, protocol):
+    def print_specific(self, protocol):
         """
-        this function is the event when print all students button is clicked
+
         """
+
+        frame = tk.Toplevel(self.master)
+        frame.title("Delete Existing Student")
+
+        labels = ["Department", "Year", "ID"]
+        inputs = []
+
+        for i in range(0, 3):
+            label = tk.Label(frame, text=f"{labels[i]}:")
+            label.grid(row=i, column=0, padx=10, pady=5, sticky="W")
+            input_box = tk.Entry(frame)
+            input_box.grid(row=i, column=1, padx=10, pady=5, sticky="E")
+            inputs.append(input_box)
+
+        submit_button = tk.Button(frame, text="Submit",
+                                  command=lambda: self.valid_specific([input_box.get() for input_box in inputs], protocol,
+                                                                 frame))
+        submit_button.grid(row=11, column=1, pady=10)
+
+    def valid_specific(self, data, protocol, frame):
+        # TODO - compleate
+        pass
+
+    def print_high_low(self, protocol, avg):
+        data = []
         if protocol == 1:
             pass
         else:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect(APP_ADDR)
-            sock.sendall(f"{4}".encode())
-            time.sleep(0.0001)
-            data = sock.recv(BUFFER_SIZE).decode()
-            self.display_tables_from_json(data)
+            tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            tcp_sock.connect(APP_ADDR)
+            tcp_sock.sendall(f"{6}".encode())
+            time.sleep(0.001)
+            tcp_sock.sendall(f"{avg}".encode())
+            time.sleep(0.001)
+            data = b""
+            while True:
+                segment = tcp_sock.recv(1024)
+                if not segment:
+                    break
+                data += segment
+            time.sleep(0.001)
+            data = pickle.loads(data)
 
-    def get_specific_student_function(self, protocol):
+        self.print_list(data)
+
+    def print_condition(self, protocol):
+        data = []
         if protocol == 1:
             pass
         else:
-            pass
+            tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            tcp_sock.connect(APP_ADDR)
+            tcp_sock.sendall(f"{9}".encode())
+            time.sleep(0.001)
+            data = b""
+            while True:
+                segment = tcp_sock.recv(BUFFER_SIZE)
+                if not segment:
+                    break
+                data += segment
+            time.sleep(0.001)
+            data = pickle.loads(data)
 
-    def get_max_avg(self, protocol):
-        if protocol == 1:
-            pass
-        else:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect(APP_ADDR)
-            sock.sendall(f"{6}".encode())
-            time.sleep(0.0001)
-            sock.sendall(f"{1}".encode())
-            time.sleep(0.0001)
-            data = pickle.loads(sock.recv(BUFFER_SIZE))
-            print(data)
-            # self.display_tables_from_json(data)
+        self.print_list(data)
 
-    def get_min_function(self, protocol):
-        print("Get Bad Student button clicked")
+    def display_table(self, json_data):
+        # create the GUI window
+        root = tk.Toplevel(self.master)
+        root.title("Student Information")
 
-    def add_factor_function(self, protocol):
-        print("Add Factor button clicked")
+        # create a notebook widget to hold the tables
+        notebook = ttk.Notebook(root)
 
-    def get_condition_students_function(self, protocol):
-        """
-        this function is the event when print condition students button is clicked
-        """
-        if protocol == 1:
-            pass
-        else:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect(APP_ADDR)
-            sock.sendall(f"{9}".encode())
-            time.sleep(0.0001)
-            data = pickle.loads(sock.recv(BUFFER_SIZE))
-            self.display_table_from_array(data)
+        # iterate through each degree program in the JSON data
+        for degree in json_data.keys():
+            # create a new frame for each degree program
+            frame = ttk.Frame(notebook)
+            notebook.add(frame, text=degree)
 
-    def year_up_students_function(self, protocol):
-        print("Year Up Students button clicked")
+            # create the table headers
+            columns = \
+                ("ID", "First Name", "Last Name", "Phone Number", "E-Mail", "Degree", "Track", "Average", "Condition")
+            tree = ttk.Treeview(frame, columns=columns, show="headings")
 
-    def display_tables_from_json(self, json_str):
-        """
-        TODO - the next function is print tables from list of Jsons, maybe there is a way to combine these two functions (Or maybe not?)
-        TODO - Fix
-        this function is to print GUI-Table from Json string, it opens a new window with all tables
-        :param json_str: the Json to print tables from it
-        """
-        data_dict = json.loads(json_str)
-        table_window = tk.Toplevel(self.master)
-        table_window.title("View Tables")
-        for subject in data_dict:
-            subject_label = tk.Label(table_window, text=f"Table for {subject}:")
-            subject_label.pack()
-            table = ttk.Treeview(table_window, columns=(
-                "ID", "First Name", "Last Name", "Phone Number", "Email", "Year", "Degree", "Track", "Average",
-                "Condition"))
-            table.heading("#0", text="ID")
-            table.column("#0", width=0, stretch=tk.NO)
+            # set the column widths and alignments
+            tree.column("ID", width=50, anchor="center")
+            tree.column("First Name", width=100, anchor="w")
+            tree.column("Last Name", width=100, anchor="w")
+            tree.column("Phone Number", width=100, anchor="w")
+            tree.column("E-Mail", width=150, anchor="w")
+            tree.column("Degree", width=100, anchor="w")
+            tree.column("Track", width=100, anchor="w")
+            tree.column("Average", width=50, anchor="center")
+            tree.column("Condition", width=50, anchor="center")
 
-            table.heading("#1", text="ID")
-            table.column("#1", width=50, stretch=tk.NO)
+            # set the column header text
+            for col in columns:
+                tree.heading(col, text=col)
 
-            table.heading("#2", text="First Name")
-            table.column("#2", width=100, stretch=tk.NO)
+            # add the data to the table
+            for year in json_data[degree].keys():
+                for id_num in json_data[degree][year].keys():
+                    student = json_data[degree][year][id_num]
+                    tree.insert("", "end", values=(student["info"]["id"],
+                                                   student["info"]["firstName"],
+                                                   student["info"]["lastName"],
+                                                   student["info"]["phoneNumber"],
+                                                   student["info"]["email"],
+                                                   student["academic"]["degree"],
+                                                   student["academic"]["track"],
+                                                   student["academic"]["avg"],
+                                                   student["academic"]["condition"]))
 
-            table.heading("#3", text="Last Name")
-            table.column("#3", width=100, stretch=tk.NO)
+            # pack the table into the frame
+            tree.pack(fill="both", expand=True)
 
-            table.heading("#4", text="Phone Number")
-            table.column("#4", width=150, stretch=tk.NO)
+        # pack the notebook into the root window and start the event loop
+        notebook.pack(fill="both", expand=True)
 
-            table.heading("#5", text="Email")
-            table.column("#5", width=200, stretch=tk.NO)
+    def print_list(self, json_list):
+        root = tk.Tk()
+        root.title("Student Information")
 
-            table.heading("#6", text="Year")
-            table.column("#6", width=50, stretch=tk.NO)
+        # create a treeview with columns
+        tree = ttk.Treeview(root, columns=(
+        'ID', 'First Name', 'Last Name', 'Phone Number', 'E-Mail', 'Degree', 'Track', 'Average', 'Condition'),
+                            show='headings')
+        tree.column('ID', width=100)
+        tree.column('First Name', width=100)
+        tree.column('Last Name', width=100)
+        tree.column('Phone Number', width=100)
+        tree.column('E-Mail', width=100)
+        tree.column('Degree', width=100)
+        tree.column('Track', width=100)
+        tree.column('Average', width=100)
+        tree.column('Condition', width=100)
+        tree.heading('ID', text='ID')
+        tree.heading('First Name', text='First Name')
+        tree.heading('Last Name', text='Last Name')
+        tree.heading('Phone Number', text='Phone Number')
+        tree.heading('E-Mail', text='E-Mail')
+        tree.heading('Degree', text='Degree')
+        tree.heading('Track', text='Track')
+        tree.heading('Average', text='Average')
+        tree.heading('Condition', text='Condition')
 
-            table.heading("#7", text="Degree")
-            table.column("#7", width=100, stretch=tk.NO)
+        # add data to the treeview
+        for i, data in enumerate(json_list):
+            student_info = data['info']
+            student_academic = data['academic']
+            tree.insert('', 'end', values=(
+            student_info['id'], student_info['firstName'], student_info['lastName'], student_info['phoneNumber'],
+            student_info['email'], student_academic['degree'], student_academic['track'], student_academic['avg'],
+            student_academic['condition']))
 
-            table.heading("#8", text="Track")
-            table.column("#8", width=100, stretch=tk.NO)
-
-            table.heading("#9", text="Average")
-            table.column("#9", width=100, stretch=tk.NO)
-
-            table.heading("#10", text="Condition")
-            table.column("#10", width=100, stretch=tk.NO)
-
-            for year in data_dict[subject]:
-                for student_id in data_dict[subject][year]:
-                    student = data_dict[subject][year][student_id]
-                    table.insert("", tk.END, text=student['info']['id'], values=(
-                        student['info']['id'], student['info']['firstName'], student['info']['lastName'],
-                        student['info']['phoneNumber'], student['info']['email'], year,
-                        student['academic']['degree'], student['academic']['track'],
-                        student['academic']['avg'], student['academic']['condition']))
-            table.pack()
-
-    def display_table_from_array(self, json_arr):
-        """
-        this function is to print GUI-Table from list of Jsons, it opens a new window with table
-        :param json_arr: the Json to print tables from it
-        """
-        table_window = tk.Toplevel(self.master)
-        table_window.title("Condition Table")
-
-        table = ttk.Treeview(table_window, columns=(
-            "ID", "First Name", "Last Name", "Phone Number", "Email", "Degree", "Track", "Average", "Condition"))
-        table.heading("#0", text="ID")
-        table.column("#0", width=0, stretch=tk.NO)
-
-        table.heading("#0", text="ID")
-        table.column("#0", width=100, stretch=tk.NO)
-
-        table.heading("#1", text="First Name")
-        table.column("#1", width=100, stretch=tk.NO)
-
-        table.heading("#2", text="Last Name")
-        table.column("#2", width=100, stretch=tk.NO)
-
-        table.heading("#3", text="Phone Number")
-        table.column("#3", width=150, stretch=tk.NO)
-
-        table.heading("#4", text="Email")
-        table.column("#4", width=200, stretch=tk.NO)
-
-        table.heading("#5", text="Degree")
-        table.column("#5", width=100, stretch=tk.NO)
-
-        table.heading("#6", text="Track")
-        table.column("#6", width=100, stretch=tk.NO)
-
-        table.heading("#7", text="Average")
-        table.column("#7", width=100, stretch=tk.NO)
-
-        table.heading("#8", text="Condition")
-        table.column("#8", width=100, stretch=tk.NO)
-
-        for student in json_arr:
-            table.insert("", tk.END, text=student['info']['id'], values=(
-                student['info']['firstName'], student['info']['lastName'],
-                student['info']['phoneNumber'], student['info']['email'],
-                student['academic']['degree'], student['academic']['track'],
-                student['academic']['avg'], student['academic']['condition']))
-
-        table.pack()
-
+        # pack and display the treeview
+        tree.pack(expand=True, fill='both')
+        root.mainloop()
 
 if __name__ == "__main__":
     root = tk.Tk()
