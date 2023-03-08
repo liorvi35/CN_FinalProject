@@ -568,7 +568,6 @@ class GUI:
                 print(e)
             messagebox.showinfo("Success", "All student were promoted up a year!")
 
-
     def display_table(self, json_data):
         """
         this function prints all the database in table
@@ -582,8 +581,8 @@ class GUI:
             frame = ttk.Frame(notebook)
             notebook.add(frame, text=degree)
 
-            columns = \
-                ("ID", "First Name", "Last Name", "Phone Number", "E-Mail", "Degree", "Track", "Average", "Condition")
+            columns = ("ID", "First Name", "Last Name", "Phone Number", "E-Mail", "Year", "Degree", "Track", "Average",
+                       "Condition")
             tree = ttk.Treeview(frame, columns=columns, show="headings")
 
             tree.column("ID", width=50, anchor="center")
@@ -591,6 +590,7 @@ class GUI:
             tree.column("Last Name", width=100, anchor="w")
             tree.column("Phone Number", width=100, anchor="w")
             tree.column("E-Mail", width=150, anchor="w")
+            tree.column("Year", width=50, anchor="center")  # New column
             tree.column("Degree", width=100, anchor="w")
             tree.column("Track", width=100, anchor="w")
             tree.column("Average", width=50, anchor="center")
@@ -607,6 +607,7 @@ class GUI:
                                                    student["info"]["lastName"],
                                                    student["info"]["phoneNumber"],
                                                    student["info"]["email"],
+                                                   year,  # New value
                                                    student["academic"]["degree"],
                                                    student["academic"]["track"],
                                                    student["academic"]["avg"],
