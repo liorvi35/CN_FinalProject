@@ -134,7 +134,7 @@ class FirebaseQueries:
                 'academic': {
                     'degree': student_data[6],
                     'track': student_data[7],
-                    'avg': student_data[8],
+                    'avg': int(student_data[8]),
                     'condition': student_data[9]
                 }
             }
@@ -166,7 +166,10 @@ class FirebaseQueries:
             return 1
         else:
             choose = _id.child(student_data[3])
-            choose.update({student_data[4]:student_data[5]})
+            if student_data[4] == "avg":
+                choose.update({student_data[4]:int(student_data[5])})
+            else:
+                choose.update({student_data[4]:student_data[5]})
             return 0
 
     def print_all_students(self):
@@ -196,6 +199,7 @@ class FirebaseQueries:
         data = db.reference().get()
         parsed_data = json.loads(json.dumps(data))
         grades = list(find_grades(parsed_data))
+        print(grades)
         if len(grades) > 0:
             grades.sort()
             if int(type) == 1:
@@ -251,9 +255,9 @@ class FirebaseQueries:
 
     def next_year(self):
         """
-        this function change every student to his next year 
-        if he is on third year - he finishes the degree and delete from the database 
-        :return: 
+        this function change every student to his next year
+        if he is on third year - he finishes the degree and delete from the database
+        :return:
         """
         data = db.reference().get()
         json_obj = json.loads(json.dumps(data))
