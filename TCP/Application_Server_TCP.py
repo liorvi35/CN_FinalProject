@@ -9,10 +9,14 @@ import json
 # imports
 import pickle
 import socket
+
+from future.backports.datetime import time
+
 import Application_Queries
 import firebase_admin
 from firebase_admin import credentials
 from datetime import datetime  # for time and data
+import time
 
 
 # constants
@@ -32,7 +36,7 @@ class ServerTCP:
         :return:
         """
 
-        cred = credentials.Certificate("../FireBase_SDK.json")
+        cred = credentials.Certificate("FireBase_SDK.json")
         print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] opened database's credentials")
 
         firebase_admin.initialize_app(cred, {"databaseURL": "https://cn-finalproject-default-rtdb.firebaseio.com/"})
@@ -44,6 +48,7 @@ class ServerTCP:
 
             try:
                 server_sock.bind(SERVER_ADDR)
+                server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             except Exception as e:
                 print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
 
@@ -93,9 +98,13 @@ class ServerTCP:
                     student_data = pickle.loads(client_sock.recv(BUFFER_SIZE))
                     student = Application_Queries.FirebaseQueries.print_single_student(obj, student_data)
                     if student == -1:
-                        client_sock.sendall("Student dont exist!".encode())
+                        print("Student dont exist!")
+                        client_sock.sendall(f"{1}".encode())
                     else:
-                        client_sock.sendall(f"{student}".encode())
+                        client_sock.sendall(f"{0}".encode())
+                        time.sleep(0.0001)
+                        student = json.dumps(student)
+                        client_sock.sendall(student.encode())
 
                 elif num == "6":  # print min/max avg of students
                     avg = client_sock.recv(BUFFER_SIZE).decode("iso-8859-1")  # 1 - max , 0 - min
@@ -113,7 +122,7 @@ class ServerTCP:
                     if Application_Queries.FirebaseQueries.factor_students_avg(obj, factor) == -1:
                         client_sock.sendall(f"error occurred!".encode())
                     else:
-                        client_sock.sendall(f"all students grades has been factored with: {factor} points!".encode())
+                        client_sock.sendall(f"{factor} ".encode())
 
                 elif num == "9":  # condition
                     cond = Application_Queries.FirebaseQueries.print_conditon_students(obj)
