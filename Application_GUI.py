@@ -299,55 +299,71 @@ class GUI:
         :param frame: last gui frame
         :param protocol: tcp or rudp
         """
+        ok = True
         lengths = [len(string) > 0 for string in data]
         if not all(lengths):
             messagebox.showerror("Error-Occurred", "All data must be filled!")
+            ok = False
         else:
             if not (data[1] == "year1" or data[1] == "year2" or data[1] == "year3"):
                 messagebox.showerror("Error-Occurred", "Year must be: \'year1\' or \'year2\' or \'year3\' only!")
+                ok = False
             elif not data[2].isdigit():
                 messagebox.showerror("Error-Occurred", "ID must contain numbers only!")
+                ok = False
             elif not (data[3] == "info" or data[3] == "academic"):
                 messagebox.showerror("Error-Occurred", "Info/Academic must be: \'info\' or \'academic\' only!")
+                ok = False
             elif data[3] == "info":
                 if not (data[4] == "email" or data[4] == "firstName" or data[4] == "lastName" or data[4] == "phoneNumber"):
                     messagebox.showerror("Error-Occurred", "Info update-section must be: \'email\' or \'firstName\' or \'lastName\' or \'phoneNumber\' only!")
+                    ok = False
                 elif data[4] == "email" and not (re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", data[5])):
                     messagebox.showerror("Error-Occurred", "E-Mail should have in valid email form!")
+                    ok = False
                 elif data[4] == "phoneNumber" and not data[5].isdigit():
                     messagebox.showerror("Error-Occurred", "Phone-Number must contain numbers only!")
+                    ok = False
             elif data[3] == "academic":
                 if not (data[4] == "avg" or data[4] == "condition" or data[4] == "degree" or data[4] == "track"):
                     messagebox.showerror("Error-Occurred", "Academic update-section must be: \'avg\' or \'condition\' or \'degree\' or \'track\' only!")
+                    ok = False
                 elif data[4] == "avg" and not data[5].isdigit():
                     messagebox.showerror("Error-Occurred", "avg must be a number")
+                    ok = False
                 elif data[4] == "avg" and not (0 <= int(data[5]) <= 100):
                     messagebox.showerror("Error-Occurred", "Average must be a number in range: 0 - 100!")
+                    ok = False
                 elif data[4] == "condition" and not (data[5] == "False" or data[5] == "True"):
                     messagebox.showerror("Error-Occurred", "Condition must be: \'True\' or \'False\' only!")
-            res = 1
-            if protocol == RUDP:
-                # TODO - add rudp here
-                pass
-            else:
-                try:
-                    tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    tcp_sock.connect(APP_ADDR)
-                    tcp_sock.sendall(f"{3}".encode())
-                    time.sleep(0.001)
-                    tcp_sock.sendall(pickle.dumps(data))
-                    time.sleep(0.001)
-                    res = int(tcp_sock.recv(BUFFER_SIZE).decode("iso-8859-1"))
-                    tcp_sock.shutdown(socket.SHUT_RDWR)
-                    tcp_sock.close()
-                except Exception as e:
-                    print(e)
+                    ok = False
 
-            if res == 1:  # fail
-                messagebox.showerror("Error", "ID not found!")
+            if ok:
+                res = 1
+                if protocol == RUDP:
+                    # TODO - add rudp here
+                    pass
+                else:
+                    try:
+                        tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        tcp_sock.connect(APP_ADDR)
+                        tcp_sock.sendall(f"{3}".encode())
+                        time.sleep(0.001)
+                        tcp_sock.sendall(pickle.dumps(data))
+                        time.sleep(0.001)
+                        res = int(tcp_sock.recv(BUFFER_SIZE).decode("iso-8859-1"))
+                        tcp_sock.shutdown(socket.SHUT_RDWR)
+                        tcp_sock.close()
+                    except Exception as e:
+                        print(e)
+
+                if res == 1:  # fail
+                    messagebox.showerror("Error", "ID not found!")
+                else:
+                    messagebox.showinfo("Success", "The operation was successful.")
+                    frame.destroy()
             else:
-                messagebox.showinfo("Success", "The operation was successful.")
-                frame.destroy()
+                print("wrong input")
 
     def print_all(self, protocol):
         """
@@ -363,7 +379,7 @@ class GUI:
                 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 tcp_sock.connect(APP_ADDR)
                 tcp_sock.sendall(f"{4}".encode())
-                time.sleep(0.001)
+                time.sleep(0.005)
                 data = b""
                 while True:
                     segment = tcp_sock.recv(1024)
@@ -376,17 +392,17 @@ class GUI:
                 data = json.loads(data)
             except Exception as e:
                 print(e)
-
         self.display_table(data)
 
-    def print_specific(self, protocol):
 
+    def print_specific(self, protocol):
+        """
+        """
         frame = tk.Toplevel(self.master)
-        frame.title("Delete Existing Student")
+        frame.title("print specific Student")
 
         labels = ["Department", "Year", "ID"]
         inputs = []
-
         for i in range(0, 3):
             label = tk.Label(frame, text=f"{labels[i]}:")
             label.grid(row=i, column=0, padx=10, pady=5, sticky="W")
@@ -395,40 +411,69 @@ class GUI:
             inputs.append(input_box)
 
         submit_button = tk.Button(frame, text="Submit",
-                                  command=lambda: self.valid_specific([input_box.get() for input_box in inputs], protocol,
-                                                                 frame))
+                                  command=lambda: self.valid_specific([input_box.get() for input_box in inputs], protocol,frame))
         submit_button.grid(row=11, column=1, pady=10)
 
     def valid_specific(self, data, protocol, frame):
         """
 
         """
-        res = "1"
-        if protocol == 1:
-            # TODO - add rudp here
-            pass
+        lengths = [len(string) > 0 for string in data]
+        if not all(lengths):
+            messagebox.showerror("Error-Occurred", "All data must be filled!")
+            ok = False
+        elif not (data[1] == "year1" or data[1] == "year2" or data[1] == "year3"):
+            messagebox.showerror("Error-Occurred", "Year must be: \'year1\' or \'year2\' or \'year3\' only!")
+        elif not data[2].isdigit():
+            messagebox.showerror("Error-Occurred", "ID must contain numbers only!")
         else:
-            try:
-                tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                tcp_sock.connect(APP_ADDR)
-                tcp_sock.sendall(f"{5}".encode())
-                time.sleep(0.0001)
-                tcp_sock.sendall(pickle.dumps(data))
-                time.sleep(0.0001)
-                res = tcp_sock.recv(BUFFER_SIZE).decode("iso-8859-1")
-                tcp_sock.shutdown(socket.SHUT_RDWR)
-                tcp_sock.close()
-            except Exception as e:
-                print(e)
+            res = 1
+            saveData = []
+            if protocol == 1:
+                # TODO - add rudp here
+                pass
+            else:
+                try:
+                    tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    tcp_sock.connect(APP_ADDR)
+                    tcp_sock.sendall(f"{5}".encode())
+                    time.sleep(0.005)
+                    tcp_sock.sendall(pickle.dumps(data))
+                    time.sleep(0.001)
+                    res = int(tcp_sock.recv(BUFFER_SIZE).decode("iso-8859-1"))
+                    if res == 1:
+                        messagebox.showerror("Error", "ID not found!")
+                    else:
+                        saveData = b""
+                        while True:
+                            segment = tcp_sock.recv(1024)
+                            if not segment:
+                                break
+                            saveData += segment
+                    time.sleep(0.01)
+                    tcp_sock.shutdown(socket.SHUT_RDWR)
+                    tcp_sock.close()
+                except Exception as e:
+                    print(e)
+                if res == 0:
+                    saveData = json.loads(saveData)
+                    listd = []
+                    listd.append(saveData)
+                    self.print_list(listd)
+                    frame.destroy()
 
-            print(res)
+            if data == b'Student dont exist!':
+                messagebox.showerror("Error-Occurred", "ID not found!")
+
+
+        #    print(res)
         # TODO - error HERE!!!!
-        if res == "1":
-            messagebox.showerror("Error-Occurred", "ID not found!")
-        else:
-            res = res.replace("\'", "\"")
-            self.print_list(res)
-            frame.destroy()
+        #if res == "1":
+        #    messagebox.showerror("Error-Occurred", "ID not found!")
+        #else:
+        #    res = res.replace("\'", "\"")
+        #    self.print_list(res)
+        #    frame.destroy()
 
     def print_high_low(self, protocol, avg):
         """
@@ -460,7 +505,6 @@ class GUI:
                 tcp_sock.close()
             except Exception as e:
                 print(e)
-
         self.print_list(data)
 
     def print_condition(self, protocol):
@@ -490,7 +534,6 @@ class GUI:
                 tcp_sock.close()
             except Exception as e:
                 print(e)
-
         self.print_list(data)
 
 
