@@ -23,6 +23,11 @@ packets_buffer = {}
 received = {}
 last_seq = 0
 
+
+def handle_data():
+    return "string"
+
+
 # Define a function to send ACKs
 def send_ack(seq_num, num_acks=1):
     # Check if the ACK is a duplicate
@@ -43,12 +48,23 @@ def send_ack(seq_num, num_acks=1):
         server_socket.sendto(ack_packet, client_address)
         # Update the received dictionary with the number of ACKs received for the sequence number
         received[seq_num] = num_acks
+        # Create TCP socket
+        data_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #"""
+        # Connect to server
+        data_sock.connect((SERVER_IP, SERVER_PORT+1))
+
+        # Send message to server
+        message = handle_data()
+        data_sock.send(message.encode())
+        print(f'Sent: {message}')
+        #"""
 
 
 # Receive packets
 while True:
     # Receive packet
-    #print(packets_buffer)
+    # print(packets_buffer)
     packet, client_address = server_socket.recvfrom(BUFFER_SIZE)
     packet_data = packet.decode()
     print(packet_data)
@@ -64,8 +80,8 @@ while True:
     # Update received dictionary
     received[packet_seq_num] = True
 
-    print(f'packets_buffer.get(seq_num): {packets_buffer.get(seq_num)} seq_num: {seq_num} window_size: {window_size} len(received) % WINDOW_SIZE: {len(received) % WINDOW_SIZE}')
-
+    print(
+        f'packets_buffer.get(seq_num): {packets_buffer.get(seq_num)} seq_num: {seq_num} window_size: {window_size} len(received) % WINDOW_SIZE: {len(received) % WINDOW_SIZE}')
 
     # Check if there are packets in the buffer that can be delivered
     while packets_buffer.get(seq_num) and seq_num <= window_size:
@@ -110,4 +126,4 @@ while True:
         # Reset received dictionary
         received = {}
     # Set timeout for next packet
-    #server_socket.settimeout(TIMEOUT)
+    # server_socket.settimeout(TIMEOUT)
