@@ -1,6 +1,13 @@
+import json
+import pickle
 import socket
 import time
 import random
+
+import Application_Queries
+import firebase_admin
+from firebase_admin import credentials
+from datetime import datetime  # for time and data
 
 # Constants
 SERVER_IP = '127.0.0.1'
@@ -11,6 +18,14 @@ PACKET_COUNT = 20
 INITIAL_CWND = 1
 THRESHOLD = 8
 TIMEOUT = 3
+
+cred = credentials.Certificate("FireBase_SDK.json")
+print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] opened database's credentials")
+
+firebase_admin.initialize_app(cred, {"databaseURL": "https://cn-finalproject-default-rtdb.firebaseio.com/"})
+print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] connected to database")
+
+obj = Application_Queries.FirebaseQueries()
 
 # Create UDP socket
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -24,12 +39,73 @@ received = {}
 last_seq = 0
 
 
-def handle_data():
-    return "string"
+def handle_data(data):
+    obj = Application_Queries.FirebaseQueries()
+    num = int(data.split('$')[0])
+    stud_data = data.split('$')[1]
+    print(f'num: {num} , stud_data: {stud_data}')
+
+    if num == 2:  # delete existing student
+        d_data = f'b\'{stud_data[2:-1]}\''
+        student_data = pickle.loads(d_data.encode())
+        res = Application_Queries.FirebaseQueries.delete_existing_student(obj, student_data)
+        print("data=", student_data, " res=", res)
+        return f"{res}".encode("iso-8859-1")
+
+    elif num == 4:  # print all students
+        all_students = Application_Queries.FirebaseQueries.print_all_students(obj)
+        all_students = json.dumps(all_students)
+        return all_students.encode()
+
+    elif num == 5:  # print student
+        student_data = pickle.loads(stud_data)
+        student = Application_Queries.FirebaseQueries.print_single_student(obj, student_data)
+        if student == -1:
+            print("Student dont exist!")
+            return f"{1}".encode()
+        else:
+            student = json.dumps(student)
+            return f'{0} $ {student.encode()}'
+
+    elif num == 6:  # print min/max avg of students
+        avg = stud_data.decode("iso-8859-1")  # 1 - max , 0 - min
+        data = Application_Queries.FirebaseQueries.print_avg_student(obj, avg)
+        print("data=", data)
+        data = pickle.dumps(data)
+        return data
+
+    elif num == 7:  # avg of avg
+        print("inside 7")
+        str = f"{Application_Queries.FirebaseQueries.print_avg_of_avgs(obj)}".encode()
+        print(str)
+        return str
+
+    elif num == 8:  # factor
+        factor = stud_data.decode("iso-8859-1")
+        factor = int(factor)
+        if Application_Queries.FirebaseQueries.factor_students_avg(obj, factor) == -1:
+            return f"error occurred!".encode()
+        else:
+            return f"{factor} ".encode()
+
+    elif num == 9:  # condition
+        cond = Application_Queries.FirebaseQueries.print_conditon_students(obj)
+        if cond == -1:
+            return f"error occurred!".encode()
+        else:
+            data = pickle.dumps(cond)
+            return data
+
+    elif num == 10:
+        ny = Application_Queries.FirebaseQueries.next_year(obj)
+        if ny == -1:
+            return f"{-1}".encode()
+        else:
+            return f"{0}".encode()
 
 
 # Define a function to send ACKs
-def send_ack(seq_num, num_acks=1):
+def send_ack(seq_num, data, num_acks=1):
     # Check if the ACK is a duplicate
     if seq_num in received and received[seq_num] == num_acks:
         # Increment the counter for the sequence number
@@ -50,15 +126,16 @@ def send_ack(seq_num, num_acks=1):
         received[seq_num] = num_acks
         # Create TCP socket
         data_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #"""
+        # """
         # Connect to server
-        data_sock.connect((SERVER_IP, SERVER_PORT+1))
+        data_sock.connect((SERVER_IP, SERVER_PORT + 1))
 
         # Send message to server
-        message = handle_data()
-        data_sock.send(message.encode())
+        message = handle_data(data)
+        print(f'message: {message}')
+        data_sock.send(message)
         print(f'Sent: {message}')
-        #"""
+        # """
 
 
 # Receive packets
@@ -69,13 +146,15 @@ while True:
     packet_data = packet.decode()
     print(packet_data)
     packet_seq_num = int(packet_data.split(':')[0])
+    data = packet_data.split(':')[1]
     print(f'Received packet {packet_seq_num}')
+    print(f'data: {data}')
 
     # Add packet to buffer
     packets_buffer[packet_seq_num] = packet
 
     # Send ACK for received packet
-    send_ack(packet_seq_num)
+    send_ack(packet_seq_num , data)
 
     # Update received dictionary
     received[packet_seq_num] = True
@@ -101,7 +180,7 @@ while True:
         # Send a cumulative ACK for all packets up to the missing sequence number
         num_acks = missing_seq_num - window_size
         print(f'seq_num{seq_num} , num_acks {num_acks}')
-        send_ack(seq_num, num_acks)
+        send_ack(seq_num, data, num_acks)
 
     last_seq += 1
 
