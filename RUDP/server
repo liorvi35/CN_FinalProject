@@ -11,7 +11,7 @@ from datetime import datetime  # for time and data
 
 # Constants
 SERVER_IP = '127.0.0.1'
-SERVER_PORT = 1234
+SERVER_PORT = 1235
 BUFFER_SIZE = 1024
 WINDOW_SIZE = 4
 PACKET_COUNT = 20
@@ -42,14 +42,14 @@ last_seq = 0
 def handle_data(data):
     obj = Application_Queries.FirebaseQueries()
     num = int(data.split('$')[0])
-    stud_data = data.split('$')[1]
-    print(f'num: {num} , stud_data: {stud_data}')
+    print(f'num: {num}')
 
     if num == 2:  # delete existing student
-        d_data = f'b\'{stud_data[2:-1]}\''
-        student_data = pickle.loads(d_data.encode())
-        res = Application_Queries.FirebaseQueries.delete_existing_student(obj, student_data)
-        print("data=", student_data, " res=", res)
+        # student_data = pickle.loads(stud_data)
+        string_after_first_dollar = data.split('$')[1:]
+        print(f'stud_data: {string_after_first_dollar}')
+        res = Application_Queries.FirebaseQueries.delete_existing_student(obj, string_after_first_dollar)
+        print("data=", string_after_first_dollar, " res=", res)
         return f"{res}".encode("iso-8859-1")
 
     elif num == 4:  # print all students
@@ -58,7 +58,7 @@ def handle_data(data):
         return all_students.encode()
 
     elif num == 5:  # print student
-        student_data = pickle.loads(stud_data)
+        student_data = data.split('$')[1:]
         student = Application_Queries.FirebaseQueries.print_single_student(obj, student_data)
         if student == -1:
             print("Student dont exist!")
@@ -68,7 +68,8 @@ def handle_data(data):
             return f'{0} $ {student.encode()}'
 
     elif num == 6:  # print min/max avg of students
-        avg = stud_data.decode("iso-8859-1")  # 1 - max , 0 - min
+        parts = data.split("$")
+        avg = int(parts[1])  # 1 - max , 0 - min
         data = Application_Queries.FirebaseQueries.print_avg_student(obj, avg)
         print("data=", data)
         data = pickle.dumps(data)
@@ -81,8 +82,8 @@ def handle_data(data):
         return str
 
     elif num == 8:  # factor
-        factor = stud_data.decode("iso-8859-1")
-        factor = int(factor)
+        parts = data.split("$")
+        factor = int(parts[1])
         if Application_Queries.FirebaseQueries.factor_students_avg(obj, factor) == -1:
             return f"error occurred!".encode()
         else:
