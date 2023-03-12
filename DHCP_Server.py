@@ -1,53 +1,73 @@
+"""
+this file contains the DHCP server
+Authors: Lior Vinman & Yoad Tamar
+Date: 12.03.2023
+"""
+
+# imports
 import socket
 from datetime import datetime
 
-MAX_BYTES = 1024
+# constants
+BUFFER_SIZE = 1024
+clientPort = 68
+DHCP_DEST = ('255.255.255.255', clientPort)
+ADDR = ('', 67)
 
-# the port is needs to be 67-68 , but it dont work with
-serverPort = 67
-clientPort = 12345
 
+class DHCP(object):
+    """
+    this class is the DHCP server
+    """
 
-class DHCP_server(object):
+    def main(self):
+        """
+        this function is the main function that runs the server
+        """
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    def server(self):
-        print("DHCP server is starting...\n")
+        print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] socket is created!")
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        s.bind(('0.0.0.0', serverPort))
-        dest = ('255.255.255.255', clientPort)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
-        while 1:
+        print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}]  socket options set!")
+
+        sock.bind(ADDR)
+
+        print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}]  socket bound on: {ADDR}")
+
+        while True:
             try:
-                print("Wait DHCP discovery...")
-                data, address = s.recvfrom(MAX_BYTES)
-                print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] Receive DHCP discovery.")
-                #print(data)
+                print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] waiting for DHCP discovery...")
+                data, address = sock.recvfrom(BUFFER_SIZE)
+                print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] received DHCP discovery!")
 
-                print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] Send DHCP offer.")
-                data = DHCP_server.offer_get()
-                s.sendto(data, dest)
-                while 1:
+                print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] DHCP offer has been sent!")
+                data = self.offer_get()
+                sock.sendto(data, DHCP_DEST)
+                while True:
                     try:
-                        print("Wait DHCP request...")
-                        data, address = s.recvfrom(MAX_BYTES)
-                        print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] Receive DHCP request.")
-                        #print(data)
+                        print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] waiting for DHCP request")
 
-                        print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] Send DHCP pack..")
-                        print("Done\n")
-                        data = DHCP_server.pack_get()
-                        s.sendto(data, dest)
+                        data, address = sock.recvfrom(BUFFER_SIZE)
+                        print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] received DHCP request!")
+
+                        print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] sent DHCP packet")
+                        data = self.pack_get()
+                        sock.sendto(data, DHCP_DEST)
                         break
                     except:
                         raise
             except:
                 raise
+        print("\n")
 
-    def offer_get():
-
+    def offer_get(self):
+        """
+        This function creates a DHCP offer package to send to a DHCP client.
+        :returns: package (bytes): a byte string representing the DHCP offer package to be sent to the client
+        """
         OP = bytes([0x02])
         HTYPE = bytes([0x01])
         HLEN = bytes([0x06])
@@ -75,7 +95,11 @@ class DHCP_server(object):
 
         return package
 
-    def pack_get():
+    def pack_get(self):
+        """
+        Generates a DHCP request packet.
+        :returns: bytes: A byte string representing the DHCP request packet.
+        """
         OP = bytes([0x02])
         HTYPE = bytes([0x01])
         HLEN = bytes([0x06])
@@ -104,5 +128,6 @@ class DHCP_server(object):
         return package
 
 
-if __name__ == '__main__':
-    DHCP_server.server(__name__)
+if __name__ == "__main__":
+    dhcp_server = DHCP()
+    dhcp_server.main()
