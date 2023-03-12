@@ -57,11 +57,10 @@ class DHCP(object):
                         data = self.pack_get()
                         sock.sendto(data, DHCP_DEST)
                         break
-                    except:
-                        raise
-            except:
-                raise
-        print("\n")
+                    except Exception as e:
+                        raise e
+            except (Exception, socket.error) as e:
+                raise e 
 
     def offer_get(self):
         """
