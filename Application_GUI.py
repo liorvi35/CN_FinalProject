@@ -1,7 +1,7 @@
 """
 this file contains the GUI
 Authors: Lior Vinman , Yoad Tamar
-Date: 08.03.2023
+Date: 12.03.2023
 """
 
 # imports
@@ -26,6 +26,122 @@ APP_WIDTH = 750
 APP_ADDR = ("127.0.0.1", 9090)
 TCP = 2
 RUDP = 1
+SERVER_IP = '127.0.0.1'
+RUDP_SERVER_PORT = 1234
+DATA_PORT = 1235
+WINDOW_SIZE = 4
+INITIAL_CWND = 1
+THRESHOLD = 8
+TIMEOUT = 3
+
+DHCP_SERVER_PORT = 67
+DHCP_CLIENT_ADDR = ("0.0.0.0", 68)
+DHCP_DEST = ("<broadcast>", DHCP_SERVER_PORT)
+
+rudp_server_address = (SERVER_IP, RUDP_SERVER_PORT)
+
+# Create UDP socket
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+data_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+# Bind socket to server address and port
+data_sock.bind((SERVER_IP, RUDP_SERVER_PORT + 1))
+
+# Listen for incoming connections
+data_sock.listen()
+
+# Initialize variables for sequence numbers, window size, and packets buffer
+seq_num = 1
+window_size = INITIAL_CWND
+packets_buffer = {}
+
+
+def send_packet(packet):
+    global seq_num
+    global window_size
+    global rudp_server_address
+    global client_socket
+    client_socket.sendto(packet, rudp_server_address)
+    print(f"Sent packet {seq_num}")
+    # Add packet to buffer
+    packets_buffer[seq_num] = packet
+
+    # Update sequence number and window size
+    seq_num += 1
+    if seq_num <= window_size:
+        window_size = min(window_size * 2, WINDOW_SIZE)
+    else:
+        window_size += 1 / WINDOW_SIZE
+
+    # Set timeout based on estimated RTT
+    start_time = time.time()
+    client_socket.settimeout(TIMEOUT)
+    while True:
+        # Receive ACK
+        try:
+            ack_packet, _ = client_socket.recvfrom(BUFFER_SIZE)
+            end_time = time.time()
+            rtt = end_time - start_time
+            client_socket.settimeout(max(TIMEOUT - rtt, 0))
+        except socket.timeout:
+            # Timeout, retransmit unacknowledged packets
+            print('Timeout, retransmitting packets')
+            window_size = max(window_size / 2, 1)
+            for seq, pkt in packets_buffer.items():
+                client_socket.sendto(pkt, rudp_server_address)
+                print(f'Retransmitted packet {seq}')
+            break
+
+        # Parse ACK
+        ack_data = ack_packet.decode()
+        print(f'ack_data: {ack_data}')
+        ack_seq_num = int(ack_data.split(':')[0])
+        print(f'Received ACK {ack_seq_num}')
+
+        # Update packets buffer and window size
+        if ack_seq_num in packets_buffer:
+            del packets_buffer[ack_seq_num]
+            if ack_seq_num <= window_size:
+                window_size = min(window_size + 1, WINDOW_SIZE)
+        else:
+            # Duplicate ACK, ignore
+            continue
+
+        # Handle out-of-order ACKs
+        while len(packets_buffer) > 0:
+            if min(packets_buffer.keys()) == ack_seq_num + 1:
+                break
+            seq = min(packets_buffer.keys())
+            pkt = packets_buffer[seq]
+            client_socket.sendto(pkt, rudp_server_address)
+            print(f'Retransmitted packet {seq}')
+            del packets_buffer[seq]
+
+        # Check if all packets have been acknowledged
+        if len(packets_buffer) == 0:
+            # """
+            # Accept connection from client
+            client_data_socket, client_data_address = data_sock.accept()
+
+            # Receive data from client
+            data = b""
+            while True:
+                segment = client_data_socket.recv(1024)
+                if not segment:
+                    break
+                data += segment
+            print(f'Received: {data}')
+            # """
+            print("#######end#######")
+            return data
+
+
+def send_data(data):
+    global seq_num
+    # Divide the message into chunks
+    packet = f"{seq_num}:{data}".encode()
+    print(packet)
+    return send_packet(packet)
 
 
 class GUI:
@@ -73,10 +189,128 @@ class GUI:
         self.cred.pack()
 
     def conn_dhcp(self):
-        pass
+
+        exp_flag = False
+
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            sock.bind(DHCP_CLIENT_ADDR)
+        except (Exception, socket.error) as e:
+            messagebox.showerror("Error-Occurred", f"{e}")
+            exp_flag = True
+
+        data = self.discover_get()
+
+        try:
+            sock.sendto(data, DHCP_DEST)
+            data, address = sock.recvfrom(BUFFER_SIZE)
+        except (Exception, socket.error) as e:
+            messagebox.showerror("Error-Occurred", f"{e}")
+            exp_flag = True
+
+        data = self.request_get()
+
+        try:
+            sock.sendto(data, DHCP_DEST)
+            data, address = sock.recvfrom(BUFFER_SIZE)
+        except (Exception, socket.error) as e:
+            messagebox.showerror("Error-Occurred", f"{e}")
+            exp_flag = True
+
+        if not exp_flag:
+            messagebox.showinfo("Success", "DHCP configuration success!")
+
+    def discover_get(self):
+        OP = bytes([0x01])
+        HTYPE = bytes([0x01])
+        HLEN = bytes([0x06])
+        HOPS = bytes([0x00])
+        XID = bytes([0x39, 0x03, 0xF3, 0x26])
+        SECS = bytes([0x00, 0x00])
+        FLAGS = bytes([0x00, 0x00])
+        CIADDR = bytes([0x00, 0x00, 0x00, 0x00])
+        YIADDR = bytes([0x00, 0x00, 0x00, 0x00])
+        SIADDR = bytes([0x00, 0x00, 0x00, 0x00])
+        GIADDR = bytes([0x00, 0x00, 0x00, 0x00])
+        CHADDR1 = bytes([0x00, 0x05, 0x3C, 0x04])
+        CHADDR2 = bytes([0x8D, 0x59, 0x00, 0x00])
+        CHADDR3 = bytes([0x00, 0x00, 0x00, 0x00])
+        CHADDR4 = bytes([0x00, 0x00, 0x00, 0x00])
+        CHADDR5 = bytes(192)
+        Magiccookie = bytes([0x63, 0x82, 0x53, 0x63])
+        DHCPOptions1 = bytes([53, 1, 1])
+        DHCPOptions2 = bytes([50, 4, 0xC0, 0xA8, 0x01, 0x64])
+
+        package = OP + HTYPE + HLEN + HOPS + XID + SECS + FLAGS + CIADDR + YIADDR + SIADDR + GIADDR + CHADDR1 + CHADDR2 + CHADDR3 + CHADDR4 + CHADDR5 + Magiccookie + DHCPOptions1 + DHCPOptions2
+
+        return package
+
+    def request_get(self):
+        OP = bytes([0x01])
+        HTYPE = bytes([0x01])
+        HLEN = bytes([0x06])
+        HOPS = bytes([0x00])
+        XID = bytes([0x39, 0x03, 0xF3, 0x26])
+        SECS = bytes([0x00, 0x00])
+        FLAGS = bytes([0x00, 0x00])
+        CIADDR = bytes([0x00, 0x00, 0x00, 0x00])
+        YIADDR = bytes([0x00, 0x00, 0x00, 0x00])
+        SIADDR = bytes([0x00, 0x00, 0x00, 0x00])
+        GIADDR = bytes([0x00, 0x00, 0x00, 0x00])
+        CHADDR1 = bytes([0x00, 0x0C, 0x29, 0xDD])
+        CHADDR2 = bytes([0x5C, 0xA7, 0x00, 0x00])
+        CHADDR3 = bytes([0x00, 0x00, 0x00, 0x00])
+        CHADDR4 = bytes([0x00, 0x00, 0x00, 0x00])
+        CHADDR5 = bytes(192)
+        Magiccookie = bytes([0x63, 0x82, 0x53, 0x63])
+        DHCPOptions1 = bytes([53, 1, 3])
+        DHCPOptions2 = bytes([50, 4, 0xC0, 0xA8, 0x01, 0x64])
+        DHCPOptions3 = bytes([54, 4, 0xC0, 0xA8, 0x01, 0x01])
+
+        package = OP + HTYPE + HLEN + HOPS + XID + SECS + FLAGS + CIADDR + YIADDR + SIADDR + GIADDR + CHADDR1 + CHADDR2 + CHADDR3 + CHADDR4 + CHADDR5 + Magiccookie + DHCPOptions1 + DHCPOptions2 + DHCPOptions3
+
+        return package
 
     def conn_dns(self):
-        pass
+        dns_wind = tk.Toplevel(self.master)
+        dns_wind.geometry(f"{DNS_WIDTH}x{DNS_HEIGHT}")
+        dns_wind.title("Domain Name System")
+
+        dns_label = tk.Label(dns_wind, text="Enter Domain Name:")
+        dns_label.config(font=("MS Outlook", 15))
+        dns_label.pack(padx=20, pady=10)
+
+        self.dns_box = tk.Entry(dns_wind)
+        self.dns_box.pack(padx=20, pady=10)
+
+        self.dns_out = tk.Label(dns_wind, text="")
+        self.dns_out.pack(padx=20, pady=10)
+
+        dns_sub = tk.Button(dns_wind, text="Get Domain's IP-Address!", width=20, command=self.dns_submit)
+        dns_sub.config(font=("MS Outlook", 10, "bold"))
+        dns_sub.pack()
+
+    def dns_submit(self):
+        data = self.dns_box.get()
+
+        if data == "":
+            messagebox.showerror("Error-Occurred", "Enter non empty url!")
+        else:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect(DNS_ADDR)
+                sock.sendall(data.encode())
+                data = sock.recv(BUFFER_SIZE).decode()
+                sock.shutdown(socket.SHUT_RDWR)
+                sock.close()
+            except Exception as e:
+                messagebox.showerror("Error-Occurred", "Cannot connect to DNS server!")
+
+        text = data if data == "Non-Existent Domain" else f"Domain's IP Address = {data}"
+
+        self.dns_out.config(text=text)
+
 
     def conn_app(self, protocol):
         """
@@ -197,23 +431,19 @@ class GUI:
         elif not (data[9] == "False" or data[9] == "True"):
             messagebox.showerror("Error-Occurred", "Condition must be \'True\' or \'False\' only!")
         else:
-            if protocol == RUDP:
-                # TODO - add rudp here
-                pass
-            else:
-                try:
-                    tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    tcp_sock.connect(APP_ADDR)
-                    tcp_sock.sendall(f"{1}".encode())
-                    time.sleep(0.001)
-                    tcp_sock.sendall(pickle.dumps(data))
-                    time.sleep(0.001)
-                    tcp_sock.shutdown(socket.SHUT_RDWR)
-                    tcp_sock.close()
-                    messagebox.showinfo("Success", f"Student with ID: {data[1]} was added successfully!")
-                    frame.destroy()
-                except Exception as e:
-                    print(e)
+            try:
+                tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                tcp_sock.connect(APP_ADDR)
+                tcp_sock.sendall(f"{1}".encode())
+                time.sleep(0.001)
+                tcp_sock.sendall(pickle.dumps(data))
+                time.sleep(0.001)
+                tcp_sock.shutdown(socket.SHUT_RDWR)
+                tcp_sock.close()
+                messagebox.showinfo("Success", f"Student with ID: {data[1]} was added successfully!")
+                frame.destroy()
+            except Exception as e:
+                print(e)
 
     def delete_student(self, protocol):
         """
@@ -248,7 +478,7 @@ class GUI:
         res = 1
         if protocol == RUDP:
             # TODO - add rudp here
-            pass
+            res = int(send_data(f"2 ${pickle.dumps(data)}")).decode("iso-8859-1")
         else:
             try:
                 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -565,7 +795,6 @@ class GUI:
         if not (0 < int(data) <= 100):
             messagebox.showerror("Error-Occurred", "Points must be between 1 - 100 only!")
         else:
-
             res = -1
 
             if protocol == RUDP:
