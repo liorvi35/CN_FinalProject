@@ -27,7 +27,7 @@ APP_ADDR = ("127.0.0.1", 9090)
 TCP = 2
 RUDP = 1
 SERVER_IP = '127.0.0.1'
-RUDP_SERVER_PORT = 1234
+RUDP_SERVER_PORT = 1235
 DATA_PORT = 1235
 WINDOW_SIZE = 4
 INITIAL_CWND = 1
@@ -356,8 +356,9 @@ class GUI:
         """
         res = 1
         if protocol == RUDP:
-            # TODO - add rudp here
-            res = int(send_data(f"2 ${pickle.dumps(data)}")).decode("iso-8859-1")
+            print(data)
+            pack_string = f"2 ${data[0]}${data[1]}${data[2]}"
+            res = int(send_data(pack_string))
         else:
             try:
                 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -481,8 +482,8 @@ class GUI:
         """
         data = {}
         if protocol == RUDP:
-            # TODO - add rudp here
-            pass
+            pack_string = f"10 $none"
+            data = json.loads(send_data(pack_string))
         else:
             try:
                 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -501,7 +502,13 @@ class GUI:
                 data = json.loads(data)
             except Exception as e:
                 print(e)
-        self.display_table(data)
+        print(data)
+        if not data == -1:
+            self.display_table(data)
+        else:
+            messagebox.showerror("Error-Occurred", "there is no student in data")
+
+
 
 
     def print_specific(self, protocol):
@@ -539,8 +546,9 @@ class GUI:
             res = 1
             saveData = []
             if protocol == 1:
-                # TODO - add rudp here
-                pass
+                print(data)
+                pack_string = f"2 ${data[0]}${data[1]}${data[2]}"
+                res = int(send_data(pack_string))
             else:
                 try:
                     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -574,15 +582,6 @@ class GUI:
             if data == b'Student dont exist!':
                 messagebox.showerror("Error-Occurred", "ID not found!")
 
-
-        #    print(res)
-        # TODO - error HERE!!!!
-        #if res == "1":
-        #    messagebox.showerror("Error-Occurred", "ID not found!")
-        #else:
-        #    res = res.replace("\'", "\"")
-        #    self.print_list(res)
-        #    frame.destroy()
 
     def print_high_low(self, protocol, avg):
         """
@@ -623,8 +622,8 @@ class GUI:
         """
         data = []
         if protocol == 1:
-            # TODO - add rudp here
-            pass
+            pack_string = f"9 $none"
+            data = send_data(pack_string)
         else:
             try:
                 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -677,8 +676,9 @@ class GUI:
             res = -1
 
             if protocol == RUDP:
-                # TODO - add rudp here
-                pass
+                print(data)
+                pack_string = f"8 ${data[0]}"
+                res = int(send_data(pack_string))
             else:
                 try:
                     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -705,8 +705,12 @@ class GUI:
         :param protocol: tcp or rudp
         """
         if protocol == RUDP:
-            # TODO - add rudp here
-            pass
+            try:
+                pack_string = f"10 $none"
+                send_data(pack_string)
+            except Exception as e:
+                print(e)
+            messagebox.showinfo("Success", "All student were promoted up a year!")
         else:
             try:
                 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
