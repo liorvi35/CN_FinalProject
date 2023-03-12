@@ -1,7 +1,7 @@
 """
 this file is implementation for DNS-SERVER using UDP communication
 Authors: Lior Vinman, Yoad Tamar
-Date: 06.03.2023
+Date: 12.03.2023
 """
 
 # imports
@@ -14,6 +14,7 @@ from urllib.parse import urlparse  # for domain extracting
 SERVER_ADDR = ("127.0.0.1", 53)  # server address and port
 BUFFER_SIZE = 1024  # maximal size of received message
 ERR = -1  # global err code
+NUM_CONN = 300
 
 
 class DNS:
@@ -48,50 +49,75 @@ class DNS:
 
         dns_cache = {}  # dictionary that holding pairs: (domain, ip)
 
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server_sock:  # creating UDP socket
+        exp_flag = False
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_sock:  # creating UDP socket
 
             try:
                 server_sock.bind(SERVER_ADDR)  # socket binding
             except Exception as e:
                 print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
-
             print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] server bound on: {SERVER_ADDR}")
+
+            try:
+                server_sock.listen(NUM_CONN)  # socket listening
+            except Exception as e:
+                print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
+
+            print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] server listening for connection")
 
             while True:
 
-                try:
-                    client_msg, client_addr = server_sock.recvfrom(BUFFER_SIZE)  # receiving url
-                except Exception as e:
-                    print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
+                client_sock, client_addr = server_sock.accept()
+                print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] accepted connection from: {client_addr}")
 
-                print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] received message from: {client_addr}")
+                with client_sock:
 
-                dom = DNS.get_domain(self, client_msg.decode())  # getting domain name
-
-                if dom == ERR:  # checking if there is an error
                     try:
-                        server_sock.sendto("Non-Existent Domain".encode(), client_addr)  # sending error message
+                        client_msg = client_sock.recv(BUFFER_SIZE)  # receiving url
                     except Exception as e:
                         print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
 
-                    print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] message has been sent to: {client_addr}")
+                    print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] received message from: {client_addr}")
 
-                    continue
+                    dom = DNS.get_domain(self, client_msg.decode())  # getting domain name
 
-                elif dom not in dns_cache:  # checking if current domain is in cache
-                    try:
-                        dns_cache[dom] = socket.gethostbyname(dom)
-                    except Exception as e:
-                        print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
+                    if dom == ERR:  # checking if there is an error
+                        try:
+                            client_sock.sendall("Non-Existent Domain".encode())  # sending error message
+                        except Exception as e:
+                            print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
 
-                rep = dns_cache[dom]
+                        print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] message has been sent to: {client_addr}")
 
-                try:
-                    server_sock.sendto(rep.encode(), client_addr)  # sending the domain's ip
-                except Exception as e:
-                    print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
+                        continue
 
-                print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] message has been sent to: {client_addr}")
+                    elif dom not in dns_cache:  # checking if current domain is in cache
+                        try:
+                            dns_cache[dom] = socket.gethostbyname(dom)
+                        except Exception as e:
+                            print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
+                            exp_flag = True
+
+                    if not exp_flag:
+                        rep = dns_cache[dom]
+
+                        try:
+                            client_sock.sendall(rep.encode())  # sending the domain's ip
+                        except Exception as e:
+                            print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
+
+                        print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] message has been sent to: {client_addr}")
+
+                    else:
+                        try:
+                            client_sock.sendall("Non-Existent Domain".encode())  # sending error message
+                        except Exception as e:
+                            print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] {e}")
+
+                        print(f"[{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}] message has been sent to: {client_addr}")
+
+                        exp_flag = False
 
 
 if __name__ == "__main__":
