@@ -10,8 +10,7 @@ from datetime import datetime
 
 # constants
 BUFFER_SIZE = 1024
-clientPort = 68
-DHCP_DEST = ('255.255.255.255', clientPort)
+DHCP_DEST = ('255.255.255.255', 68)
 ADDR = ('', 67)
 
 
@@ -60,7 +59,7 @@ class DHCP(object):
                     except (Exception, socket.error) as e:
                         raise e
             except (Exception, socket.error) as e:
-                raise e 
+                raise e
 
     def offer_get(self):
         """
