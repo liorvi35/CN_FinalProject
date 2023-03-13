@@ -1,7 +1,7 @@
 """
 this file contains the GUI
 Authors: Lior Vinman , Yoad Tamar
-Date: 12.03.2023
+Date: 08.03.2023
 """
 
 # imports
@@ -27,16 +27,12 @@ APP_ADDR = ("127.0.0.1", 9090)
 TCP = 2
 RUDP = 1
 SERVER_IP = '127.0.0.1'
-RUDP_SERVER_PORT = 1234
+RUDP_SERVER_PORT = 1235
 DATA_PORT = 1235
 WINDOW_SIZE = 4
 INITIAL_CWND = 1
 THRESHOLD = 8
 TIMEOUT = 3
-
-DHCP_SERVER_PORT = 67
-DHCP_CLIENT_ADDR = ("0.0.0.0", 68)
-DHCP_DEST = ("<broadcast>", DHCP_SERVER_PORT)
 
 rudp_server_address = (SERVER_IP, RUDP_SERVER_PORT)
 
@@ -119,7 +115,6 @@ def send_packet(packet):
 
         # Check if all packets have been acknowledged
         if len(packets_buffer) == 0:
-            # """
             # Accept connection from client
             client_data_socket, client_data_address = data_sock.accept()
 
@@ -131,9 +126,8 @@ def send_packet(packet):
                     break
                 data += segment
             print(f'Received: {data}')
-            # """
-            print("#######end#######")
             return data
+
 
 
 def send_data(data):
@@ -189,128 +183,10 @@ class GUI:
         self.cred.pack()
 
     def conn_dhcp(self):
-
-        exp_flag = False
-
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            sock.bind(DHCP_CLIENT_ADDR)
-        except (Exception, socket.error) as e:
-            messagebox.showerror("Error-Occurred", f"{e}")
-            exp_flag = True
-
-        data = self.discover_get()
-
-        try:
-            sock.sendto(data, DHCP_DEST)
-            data, address = sock.recvfrom(BUFFER_SIZE)
-        except (Exception, socket.error) as e:
-            messagebox.showerror("Error-Occurred", f"{e}")
-            exp_flag = True
-
-        data = self.request_get()
-
-        try:
-            sock.sendto(data, DHCP_DEST)
-            data, address = sock.recvfrom(BUFFER_SIZE)
-        except (Exception, socket.error) as e:
-            messagebox.showerror("Error-Occurred", f"{e}")
-            exp_flag = True
-
-        if not exp_flag:
-            messagebox.showinfo("Success", "DHCP configuration success!")
-
-    def discover_get(self):
-        OP = bytes([0x01])
-        HTYPE = bytes([0x01])
-        HLEN = bytes([0x06])
-        HOPS = bytes([0x00])
-        XID = bytes([0x39, 0x03, 0xF3, 0x26])
-        SECS = bytes([0x00, 0x00])
-        FLAGS = bytes([0x00, 0x00])
-        CIADDR = bytes([0x00, 0x00, 0x00, 0x00])
-        YIADDR = bytes([0x00, 0x00, 0x00, 0x00])
-        SIADDR = bytes([0x00, 0x00, 0x00, 0x00])
-        GIADDR = bytes([0x00, 0x00, 0x00, 0x00])
-        CHADDR1 = bytes([0x00, 0x05, 0x3C, 0x04])
-        CHADDR2 = bytes([0x8D, 0x59, 0x00, 0x00])
-        CHADDR3 = bytes([0x00, 0x00, 0x00, 0x00])
-        CHADDR4 = bytes([0x00, 0x00, 0x00, 0x00])
-        CHADDR5 = bytes(192)
-        Magiccookie = bytes([0x63, 0x82, 0x53, 0x63])
-        DHCPOptions1 = bytes([53, 1, 1])
-        DHCPOptions2 = bytes([50, 4, 0xC0, 0xA8, 0x01, 0x64])
-
-        package = OP + HTYPE + HLEN + HOPS + XID + SECS + FLAGS + CIADDR + YIADDR + SIADDR + GIADDR + CHADDR1 + CHADDR2 + CHADDR3 + CHADDR4 + CHADDR5 + Magiccookie + DHCPOptions1 + DHCPOptions2
-
-        return package
-
-    def request_get(self):
-        OP = bytes([0x01])
-        HTYPE = bytes([0x01])
-        HLEN = bytes([0x06])
-        HOPS = bytes([0x00])
-        XID = bytes([0x39, 0x03, 0xF3, 0x26])
-        SECS = bytes([0x00, 0x00])
-        FLAGS = bytes([0x00, 0x00])
-        CIADDR = bytes([0x00, 0x00, 0x00, 0x00])
-        YIADDR = bytes([0x00, 0x00, 0x00, 0x00])
-        SIADDR = bytes([0x00, 0x00, 0x00, 0x00])
-        GIADDR = bytes([0x00, 0x00, 0x00, 0x00])
-        CHADDR1 = bytes([0x00, 0x0C, 0x29, 0xDD])
-        CHADDR2 = bytes([0x5C, 0xA7, 0x00, 0x00])
-        CHADDR3 = bytes([0x00, 0x00, 0x00, 0x00])
-        CHADDR4 = bytes([0x00, 0x00, 0x00, 0x00])
-        CHADDR5 = bytes(192)
-        Magiccookie = bytes([0x63, 0x82, 0x53, 0x63])
-        DHCPOptions1 = bytes([53, 1, 3])
-        DHCPOptions2 = bytes([50, 4, 0xC0, 0xA8, 0x01, 0x64])
-        DHCPOptions3 = bytes([54, 4, 0xC0, 0xA8, 0x01, 0x01])
-
-        package = OP + HTYPE + HLEN + HOPS + XID + SECS + FLAGS + CIADDR + YIADDR + SIADDR + GIADDR + CHADDR1 + CHADDR2 + CHADDR3 + CHADDR4 + CHADDR5 + Magiccookie + DHCPOptions1 + DHCPOptions2 + DHCPOptions3
-
-        return package
+        pass
 
     def conn_dns(self):
-        dns_wind = tk.Toplevel(self.master)
-        dns_wind.geometry(f"{DNS_WIDTH}x{DNS_HEIGHT}")
-        dns_wind.title("Domain Name System")
-
-        dns_label = tk.Label(dns_wind, text="Enter Domain Name:")
-        dns_label.config(font=("MS Outlook", 15))
-        dns_label.pack(padx=20, pady=10)
-
-        self.dns_box = tk.Entry(dns_wind)
-        self.dns_box.pack(padx=20, pady=10)
-
-        self.dns_out = tk.Label(dns_wind, text="")
-        self.dns_out.pack(padx=20, pady=10)
-
-        dns_sub = tk.Button(dns_wind, text="Get Domain's IP-Address!", width=20, command=self.dns_submit)
-        dns_sub.config(font=("MS Outlook", 10, "bold"))
-        dns_sub.pack()
-
-    def dns_submit(self):
-        data = self.dns_box.get()
-
-        if data == "":
-            messagebox.showerror("Error-Occurred", "Enter non empty url!")
-        else:
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.connect(DNS_ADDR)
-                sock.sendall(data.encode())
-                data = sock.recv(BUFFER_SIZE).decode()
-                sock.shutdown(socket.SHUT_RDWR)
-                sock.close()
-            except Exception as e:
-                messagebox.showerror("Error-Occurred", "Cannot connect to DNS server!")
-
-        text = data if data == "Non-Existent Domain" else f"Domain's IP Address = {data}"
-
-        self.dns_out.config(text=text)
-
+        pass
 
     def conn_app(self, protocol):
         """
@@ -404,7 +280,7 @@ class GUI:
 
         submit_button = tk.Button(frame, text="Submit",
                                   command=lambda: self.valid_add([input_box.get() for input_box in inputs], frame,
-                                                             protocol))
+                                                                 protocol))
         submit_button.grid(row=11, column=1, pady=10)
 
     def valid_add(self, data, frame, protocol):
@@ -431,19 +307,27 @@ class GUI:
         elif not (data[9] == "False" or data[9] == "True"):
             messagebox.showerror("Error-Occurred", "Condition must be \'True\' or \'False\' only!")
         else:
-            try:
-                tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                tcp_sock.connect(APP_ADDR)
-                tcp_sock.sendall(f"{1}".encode())
-                time.sleep(0.001)
-                tcp_sock.sendall(pickle.dumps(data))
-                time.sleep(0.001)
-                tcp_sock.shutdown(socket.SHUT_RDWR)
-                tcp_sock.close()
-                messagebox.showinfo("Success", f"Student with ID: {data[1]} was added successfully!")
-                frame.destroy()
-            except Exception as e:
-                print(e)
+            if protocol == RUDP:
+                try:
+                    pack_string = f"1 ${data[0]}${data[1]}${data[2]}${data[3]}${data[4]}${data[5]}${data[6]}${data[7]}${data[8]}${data[9]}"
+                    send_data(pack_string)
+                    messagebox.showinfo("Success", f"Student with ID: {data[1]} was added successfully!")
+                except Exception as e:
+                    print(e)
+            else:
+                try:
+                    tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    tcp_sock.connect(APP_ADDR)
+                    tcp_sock.sendall(f"{1}".encode())
+                    time.sleep(0.001)
+                    tcp_sock.sendall(pickle.dumps(data))
+                    time.sleep(0.001)
+                    tcp_sock.shutdown(socket.SHUT_RDWR)
+                    tcp_sock.close()
+                    messagebox.showinfo("Success", f"Student with ID: {data[1]} was added successfully!")
+                    frame.destroy()
+                except Exception as e:
+                    print(e)
 
     def delete_student(self, protocol):
         """
@@ -477,8 +361,10 @@ class GUI:
         """
         res = 1
         if protocol == RUDP:
-            # TODO - add rudp here
-            res = int(send_data(f"2 ${pickle.dumps(data)}")).decode("iso-8859-1")
+            pack_string = f"2 ${data[0]}${data[1]}${data[2]}"
+            res = send_data(pack_string)
+            my_char = chr(res[2])  # Extract the character '1' from the byte string
+            res = int(my_char)  # Convert the character '1' to an integer
         else:
             try:
                 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -542,7 +428,7 @@ class GUI:
                 messagebox.showerror("Error-Occurred", "ID must contain numbers only!")
                 ok = False
             elif not (data[3] == "info" or data[3] == "academic"):
-                messagebox.showerror("Error-Occurred", "Info/Academic must be: \'info\' or \'academic\' only!")
+                messagebox.showerror("Error-Occurred", "info/academic must be: \'info\' or \'academic\' only!")
                 ok = False
             elif data[3] == "info":
                 if not (data[4] == "email" or data[4] == "firstName" or data[4] == "lastName" or data[4] == "phoneNumber"):
@@ -571,8 +457,10 @@ class GUI:
             if ok:
                 res = 1
                 if protocol == RUDP:
-                    # TODO - add rudp here
-                    pass
+                    pack_string = f"3 ${data[0]}${data[1]}${data[2]}${data[3]}${data[4]}${data[5]}"
+                    res = send_data(pack_string)
+                    my_char = chr(res[2])  # Extract the character '1' from the byte string
+                    res = int(my_char)  # Convert the character '1' to an integer
                 else:
                     try:
                         tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -601,9 +489,13 @@ class GUI:
         :param protocol: tcp or rudp
         """
         data = {}
+        res = 0
         if protocol == RUDP:
-            # TODO - add rudp here
-            pass
+            pack_string = f"4 $none"
+            data = json.loads(send_data(pack_string))
+            if data is None:
+                print("data is null")
+                res = 1
         else:
             try:
                 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -620,9 +512,14 @@ class GUI:
                 tcp_sock.shutdown(socket.SHUT_RDWR)
                 tcp_sock.close()
                 data = json.loads(data)
+                if data is None:
+                    res = 1
             except Exception as e:
                 print(e)
-        self.display_table(data)
+        if not res == 1:
+            self.display_table(data)
+        else:
+            messagebox.showerror("Error-Occurred", "there is no student in data")
 
 
     def print_specific(self, protocol):
@@ -660,8 +557,13 @@ class GUI:
             res = 1
             saveData = []
             if protocol == 1:
-                # TODO - add rudp here
-                pass
+                pack_string = f"5 ${data[0]}${data[1]}${data[2]}"
+                res = send_data(pack_string).decode()
+                if res == "1":
+                    res = 1
+                else:
+                    saveData = res
+                    res = 2
             else:
                 try:
                     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -685,25 +587,19 @@ class GUI:
                     tcp_sock.close()
                 except Exception as e:
                     print(e)
-                if res == 0:
-                    saveData = json.loads(saveData)
-                    listd = []
-                    listd.append(saveData)
-                    self.print_list(listd)
-                    frame.destroy()
-
-            if data == b'Student dont exist!':
+            if res == 0:
+                saveData = json.loads(saveData)
+                listd = []
+                listd.append(saveData)
+                self.print_list(listd)
+                frame.destroy()
+            elif res == 2:
+                listd = []
+                listd.append(json.loads(saveData))
+                self.print_list(listd)
+            else:
                 messagebox.showerror("Error-Occurred", "ID not found!")
 
-
-        #    print(res)
-        # TODO - error HERE!!!!
-        #if res == "1":
-        #    messagebox.showerror("Error-Occurred", "ID not found!")
-        #else:
-        #    res = res.replace("\'", "\"")
-        #    self.print_list(res)
-        #    frame.destroy()
 
     def print_high_low(self, protocol, avg):
         """
@@ -713,8 +609,15 @@ class GUI:
         """
         data = []
         if protocol == 1:
-            # TODO - add rudp here
-            pass
+            pack_string = f"6 ${avg}"
+            return_data = send_data(pack_string).decode()
+            res = 0
+            if not return_data == "1":
+                return_data = json.loads(return_data)
+                data.append(return_data)
+            else:
+                res = 1
+
         else:
             try:
                 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -733,9 +636,16 @@ class GUI:
                 data = pickle.loads(data)
                 tcp_sock.shutdown(socket.SHUT_RDWR)
                 tcp_sock.close()
+                if data == -1:
+                    res = 1
+                else:
+                    res = 0
             except Exception as e:
                 print(e)
-        self.print_list(data)
+        if not res == 1:
+            self.print_list(data)
+        else:
+            messagebox.showerror("Error-Occurred", "there is no student in data")
 
     def print_condition(self, protocol):
         """
@@ -744,8 +654,18 @@ class GUI:
         """
         data = []
         if protocol == 1:
-            # TODO - add rudp here
-            pass
+            pack_string = f"9 $none"
+            data = send_data(pack_string).decode()
+            data = data.strip('$').split('$')
+            res = 1
+            if not "error occurred!" in data:
+                data_list = []
+                for stud in data:
+                    data_list.append(stud)
+                data.clear()
+                for stud in data_list:
+                    data.append(json.loads(stud))
+                res = 0
         else:
             try:
                 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -759,12 +679,18 @@ class GUI:
                         break
                     data += segment
                 time.sleep(0.001)
-                data = pickle.loads(data)
-                tcp_sock.shutdown(socket.SHUT_RDWR)
-                tcp_sock.close()
+                res = 1
+                if len(data) > 16:
+                    data = pickle.loads(data)
+                    tcp_sock.shutdown(socket.SHUT_RDWR)
+                    tcp_sock.close()
+                    res = 0
             except Exception as e:
                 print(e)
-        self.print_list(data)
+        if res == 0:
+            self.print_list(data)
+        else:
+            messagebox.showerror("Error-Occurred", "there is no student in data")
 
 
     def factor(self, protocol):
@@ -798,8 +724,8 @@ class GUI:
             res = -1
 
             if protocol == RUDP:
-                # TODO - add rudp here
-                pass
+                pack_string = f"8 ${data}"
+                res = send_data(pack_string)
             else:
                 try:
                     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -814,7 +740,7 @@ class GUI:
                 except Exception as e:
                     print(e)
 
-            if res == -1:
+            if res == "error occurred!":
                 messagebox.showerror("Error-Occurred", "Error-Occurred")
             else:
                 messagebox.showinfo("Success", f"All students got factor of {data} points!")
@@ -826,8 +752,12 @@ class GUI:
         :param protocol: tcp or rudp
         """
         if protocol == RUDP:
-            # TODO - add rudp here
-            pass
+            try:
+                pack_string = f"10 $none"
+                send_data(pack_string)
+            except Exception as e:
+                print(e)
+            messagebox.showinfo("Success", "All student were promoted up a year!")
         else:
             try:
                 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
