@@ -10,7 +10,7 @@ from datetime import datetime
 
 # constants
 BUFFER_SIZE = 1024
-DHCP_DEST = ('255.255.255.255', 68)
+DHCP_DEST = ('255.255.255.255', 9989)
 ADDR = ('', 67)
 
 
