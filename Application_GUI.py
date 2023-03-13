@@ -33,6 +33,9 @@ WINDOW_SIZE = 4
 INITIAL_CWND = 1
 THRESHOLD = 8
 TIMEOUT = 3
+DHCP_SERVER_PORT = 67
+DHCP_CLIENT_ADDR = ("0.0.0.0", 9989)
+DHCP_DEST = ("<broadcast>", DHCP_SERVER_PORT)
 
 rudp_server_address = (SERVER_IP, RUDP_SERVER_PORT)
 
@@ -182,7 +185,7 @@ class GUI:
         self.cred.config(font=("MS Outlook", 10))
         self.cred.pack()
 
-        def conn_dhcp(self):
+    def conn_dhcp(self):
 
         exp_flag = False
 
