@@ -9,7 +9,8 @@ import firebase_admin
 from firebase_admin import db
 
 
-svdvdvsdvsdvd    ids = []
+def get_ids_by_avg(database, avg):
+    ids = []
     for dept, years in database.items():
         for year, students in years.items():
             for student_id, info in students.items():
