@@ -42,30 +42,24 @@ last_seq = 0
 def handle_data(data):
     obj = Application_Queries.FirebaseQueries()
     num = int(data.split('$')[0])
-    print(f'num: {num}')
 
     if num == 1:  # add new student
-        print("1")
         #student_data = pickle.loads(client_sock.recv(BUFFER_SIZE))
         #Application_Queries.FirebaseQueries.add_new_student(obj, student_data)
         #client_sock.sendall(f"Student with id = {student_data[1]} was added to database!".encode())
         string_after_first_dollar = data.split('$')[1:]
-        print(f'stud_data: {string_after_first_dollar}')
         Application_Queries.FirebaseQueries.add_new_student(obj, string_after_first_dollar)
         return f"{0}".encode("iso-8859-1")
 
     elif num == 2:  # delete existing student
         # student_data = pickle.loads(stud_data)
         string_after_first_dollar = data.split('$')[1:]
-        print(f'stud_data: {string_after_first_dollar}')
         res = Application_Queries.FirebaseQueries.delete_existing_student(obj, string_after_first_dollar)
         print("data=", string_after_first_dollar, " res=", res)
         return f"{res}".encode("iso-8859-1")
 
     elif num == 3:  # update existing student
-        print("#########")
         string_after_first_dollar = data.split('$')[1:]
-        print(string_after_first_dollar)
         res = Application_Queries.FirebaseQueries.update_exsiting_student(obj, string_after_first_dollar)
         print("data=", string_after_first_dollar, " res=", res)
         return f"{res}".encode("iso-8859-1")
@@ -77,9 +71,7 @@ def handle_data(data):
 
     elif num == 5:  # print student
         student_data = data.split('$')[1:]
-        print(f"student data: {student_data}")
         student = Application_Queries.FirebaseQueries.print_single_student(obj, student_data)
-        print(f"student data: {student}")
         if student == -1:
             print("Student dont exist!")
             return "1"
@@ -90,20 +82,16 @@ def handle_data(data):
     elif num == 6:  # print min/max avg of students
         parts = data.split("$")
         avg = int(parts[1])  # 1 - max , 0 - min
-        print(f'avg is: {avg}')
         data = Application_Queries.FirebaseQueries.print_avg_student(obj, avg)
-        print(f"data:{data}")
         if not data ==-1:
             return_data = ""
             for stud in data:
                 return_data += "" + json.dumps(stud)
-            print(f"data:{return_data}")
             return return_data
         else:
             return "1"
 
     elif num == 7:  # avg of avg
-        print("inside 7")
         str = f"{Application_Queries.FirebaseQueries.print_avg_of_avgs(obj)}"
         print(str)
         return str
@@ -121,12 +109,10 @@ def handle_data(data):
         if cond == -1:
             return f"error occurred!"
         else:
-            print(cond)
             data = ""
             for stud in cond:
                 print(stud)
                 data = data + "$" + json.dumps(stud)
-            print(data)
             return data
 
     elif num == 10: # promote
@@ -153,7 +139,6 @@ def send_ack(seq_num, data, num_acks=1):
     else:
         # Send the ACK
         ack_packet = f'{seq_num}:ACK'.encode()
-        print(f'send: {ack_packet}')
         server_socket.sendto(ack_packet, client_address)
         # Update the received dictionary with the number of ACKs received for the sequence number
         received[seq_num] = num_acks
@@ -165,9 +150,7 @@ def send_ack(seq_num, data, num_acks=1):
 
         # Send message to server
         return_data = handle_data(data)
-        print(f"return: {return_data}")
         message = f"{return_data}"
-        print(f'message: {message.encode()}')
         data_sock.send(message.encode())
         # """
 
